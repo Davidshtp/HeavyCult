@@ -27,7 +27,7 @@ HeavyCult/
    CREATE DATABASE heavycult OWNER heavycult_user;
    ```
 
-2. Copiar `backend/.env.example` a `backend/.env` y ajustar valores (puerto, correo SMTP, secretos JWT, admin inicial).
+2. Copiar `backend/.env.example` a `backend/.env` y ajustar valores (puerto, correo Brevo, secretos JWT, admin inicial).
 
 3. Instalar y arrancar:
 
@@ -49,11 +49,11 @@ HeavyCult/
 | `JWT_RECOVERY_SECRET` / `JWT_RECOVERY_EXPIRES_IN_SECONDS` | Enlace de recuperación | `300` |
 | `FRONTEND_URL` | Origen CORS y enlace de recuperación | `http://localhost:3000` |
 | `COOKIE_SECURE` / `COOKIE_MAX_AGE_SECONDS` | Cookie `jwt` | `false` / `86400` |
-| `MAIL_HOST` etc. (SMTP) | Correo real (MailerSend/Resend) | — |
-| `RESET_MAX_ATTEMPTS` | Intentos del código | `5` |
+| `BREVO_API_KEY` / `MAIL_FROM` | Correo real (Brevo) | `xkeysib-...` / `HeavyCult <remitente@dominio.com>` |
+| `TOKEN_EXPIRES_MINUTES` / `TOKEN_MAX_ATTEMPTS` | Código de recuperación | `10` / `5` |
 | `ADMIN_NOMBRE/APELLIDO/CORREO/CONTRASENA` | Admin sembrado | `admin@heavycult.co` |
 
-Si SMTP no está configurado, en desarrollo el envío se simula y el código + enlace se muestran en la consola.
+Si `BREVO_API_KEY` no está configurada, en desarrollo el envío se simula y el código + enlace se muestran en la consola. Usa tu API key y verifica el remitente en app.brevo.com.
 
 ### Endpoints (`/api`)
 

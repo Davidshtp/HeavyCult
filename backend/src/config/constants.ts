@@ -28,10 +28,7 @@ export const LOGIN_BLOCK_MINUTES = 'LOGIN_BLOCK_MINUTES';
 export const TOKEN_EXPIRES_MINUTES = 'TOKEN_EXPIRES_MINUTES';
 export const TOKEN_MAX_ATTEMPTS = 'TOKEN_MAX_ATTEMPTS';
 
-export const MAIL_HOST = 'MAIL_HOST';
-export const MAIL_PORT = 'MAIL_PORT';
-export const MAIL_USER = 'MAIL_USER';
-export const MAIL_PASSWORD = 'MAIL_PASSWORD';
+export const BREVO_API_KEY = 'BREVO_API_KEY';
 export const MAIL_FROM = 'MAIL_FROM';
 
 export const ADMIN_NOMBRE = 'ADMIN_NOMBRE';

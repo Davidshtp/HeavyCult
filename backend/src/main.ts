@@ -43,9 +43,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   await app.listen(port);
-  console.log(
-    `[HeavyCult] API corriendo en http://localhost:${port}`,
-  );
+  console.log(`[HeavyCult] API corriendo en http://localhost:${port}`);
 }
 
 void bootstrap();

@@ -35,10 +35,7 @@ export const envValidationSchema = Joi.object({
   TOKEN_EXPIRES_MINUTES: Joi.number().integer().positive().default(10),
   TOKEN_MAX_ATTEMPTS: Joi.number().integer().positive().default(5),
 
-  MAIL_HOST: Joi.string().allow('').optional(),
-  MAIL_PORT: Joi.number().port().optional(),
-  MAIL_USER: Joi.string().email().allow('').optional(),
-  MAIL_PASSWORD: Joi.string().allow('').optional(),
+  BREVO_API_KEY: Joi.string().allow('').optional(),
   MAIL_FROM: Joi.string().allow('').optional(),
 
   ADMIN_NOMBRE: Joi.string().required(),
