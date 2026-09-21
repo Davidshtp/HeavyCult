@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Entornos (nunca subir secretos)
+.env
+.env.local
+.env.*.local
+
+# Registros y temporales
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Testing
+coverage/
+
+# Misc
+*.pid

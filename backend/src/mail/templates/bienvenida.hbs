@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bienvenido a HeavyCult</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Arial, sans-serif;
+        background-color: #f6f6f6;
+        margin: 0;
+        padding: 24px;
+        color: #1a1a2e;
+      }
+      .card {
+        max-width: 480px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 32px;
+        border: 1px solid #e5e5e5;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 8px;
+        color: #111827;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.5;
+        color: #374151;
+      }
+      .boton {
+        display: block;
+        text-align: center;
+        background-color: #111827;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 8px;
+        padding: 14px 20px;
+        font-weight: 600;
+        font-size: 15px;
+        margin: 24px 0 8px;
+      }
+      .nota {
+        font-size: 13px;
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Hola {{nombre}}</h1>
+      <p>
+        Tu usuario fue creado en la plataforma <strong>HeavyCult</strong> por
+        un administrador. Tu correo de acceso es
+        <strong>{{correo}}</strong>.
+      </p>
+      <a class="boton" href="{{enlace}}">Iniciar sesión en HeavyCult</a>
+      <p class="nota">
+        Si tienes dudas, contacta al administrador de la plataforma.
+      </p>
+    </div>
+  </body>
+</html>
