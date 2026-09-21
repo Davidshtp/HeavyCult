@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LogOutIcon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,12 +48,36 @@ function formatFecha(fecha?: string | null): string {
 function estadoVar(estado: EstadoUsuario): string {
   switch (estado) {
     case "ACTIVO":
-      return "bg-emerald-100 text-emerald-700";
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
     case "INACTIVO":
       return "bg-muted text-muted-foreground";
     case "BLOQUEADO":
-      return "bg-destructive/10 text-destructive";
+      return "bg-destructive/10 text-destructive dark:bg-destructive/20";
   }
+}
+
+function dotVar(estado: EstadoUsuario): string {
+  switch (estado) {
+    case "ACTIVO":
+      return "bg-emerald-500";
+    case "INACTIVO":
+      return "bg-muted-foreground";
+    case "BLOQUEADO":
+      return "bg-destructive";
+  }
+}
+
+function EstadoBadge({ estado }: { estado: EstadoUsuario }) {
+  return (
+    <Badge className={estadoVar(estado)}>
+      <span className={`size-1.5 rounded-full ${dotVar(estado)}`} />
+      {estado}
+    </Badge>
+  );
+}
+
+function iniciales(nombre: string, apellido: string): string {
+  return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
 }
 
 export default function DashboardPage() {
@@ -144,7 +169,8 @@ export default function DashboardPage() {
     return (
       <main className="mx-auto max-w-5xl p-6">
         <Skeleton className="h-14 w-full" />
-        <Skeleton className="mt-6 h-32 w-full" />
+        <Skeleton className="mt-6 h-40 w-full" />
+        <Skeleton className="mt-6 h-64 w-full" />
       </main>
     );
   }
@@ -155,18 +181,27 @@ export default function DashboardPage() {
     <main className="min-h-svh bg-muted/40">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
-          <div>
-            <p className="font-heading text-lg font-medium">HeavyCult</p>
-            <p className="text-xs text-muted-foreground">Sistema ERP</p>
+          <div className="flex items-center gap-3">
+            <BrandMark className="size-9" />
+            <div>
+              <p className="font-heading text-lg font-semibold text-foreground">
+                HeavyCult
+              </p>
+              <p className="text-xs text-muted-foreground">Panel de gestión</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-sm font-medium">
-                {usuario.nombre} {usuario.apellido}
-              </p>
-              <p className="text-xs text-muted-foreground">{usuario.correo}</p>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm font-medium">
+                  {usuario.nombre} {usuario.apellido}
+                </p>
+                <p className="text-xs text-muted-foreground">{usuario.correo}</p>
+              </div>
+              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-600 to-violet-600 text-sm font-medium text-white">
+                {iniciales(usuario.nombre, usuario.apellido)}
+              </div>
             </div>
-            <Badge className={estadoVar(usuario.estado)}>{usuario.estado}</Badge>
             <Button variant="outline" size="sm" onClick={cerrarSesion}>
               <LogOutIcon className="size-4" />
               Cerrar sesión
@@ -177,13 +212,29 @@ export default function DashboardPage() {
       </header>
 
       <div className="mx-auto max-w-5xl space-y-6 p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Bienvenido, {usuario.nombre} 👋</CardTitle>
-            <CardDescription>
-              Último acceso: {formatFecha(usuario.ultimo_acceso)}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-r from-brand-800 via-brand-700 to-violet-700 text-white">
+          <div className="absolute inset-0 bg-grid opacity-60" aria-hidden />
+          <div
+            className="absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-3xl animate-float"
+            aria-hidden
+          />
+          <div
+            className="absolute -bottom-20 left-1/3 size-48 rounded-full bg-violet-400/20 blur-3xl animate-float-delayed"
+            aria-hidden
+          />
+          <CardHeader className="relative">
+            <CardTitle className="font-heading text-xl font-semibold">
+              Bienvenido, {usuario.nombre} 👋
+            </CardTitle>
+            <CardDescription className="text-white/70">
+              Último acceso:{" "}
+              {formatFecha(usuario.ultimo_acceso)} · Rol:{" "}
+              {usuario.rol === "ADMIN" ? "Administrador" : "Empleado"}
             </CardDescription>
           </CardHeader>
+          <CardContent className="relative">
+            <EstadoBadge estado={usuario.estado} />
+          </CardContent>
         </Card>
 
         {usuario.rol === "ADMIN" && (
@@ -191,7 +242,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <UsersIcon className="size-4" />
+                  <UsersIcon className="size-4 text-brand-600 dark:text-brand-400" />
                   Nuevo usuario
                 </CardTitle>
                 <CardDescription>
@@ -272,7 +323,11 @@ export default function DashboardPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={creando}>
+                  <Button
+                    type="submit"
+                    disabled={creando}
+                    className="bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
+                  >
                     {creando ? "Creando…" : "Crear usuario"}
                   </Button>
                 </CardFooter>
@@ -302,7 +357,14 @@ export default function DashboardPage() {
                     {usuarios.map((u) => (
                       <TableRow key={u.id_usuario}>
                         <TableCell>
-                          {u.nombre} {u.apellido}
+                          <div className="flex items-center gap-2.5">
+                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                              {iniciales(u.nombre, u.apellido)}
+                            </span>
+                            <span>
+                              {u.nombre} {u.apellido}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>{u.correo}</TableCell>
                         <TableCell>
@@ -311,7 +373,7 @@ export default function DashboardPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={estadoVar(u.estado)}>{u.estado}</Badge>
+                          <EstadoBadge estado={u.estado} />
                         </TableCell>
                         <TableCell>{formatFecha(u.ultimo_acceso)}</TableCell>
                         <TableCell>

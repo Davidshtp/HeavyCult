@@ -94,7 +94,7 @@ export class AuthService {
     // Mensaje genérico para no revelar si el correo existe (evita enumeración).
     return {
       message:
-        'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.',
+        'Recibirás un enlace para restablecer tu contraseña.',
     };
   }
 

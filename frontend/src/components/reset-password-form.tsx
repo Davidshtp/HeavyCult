@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ArrowLeft, KeyRound, Loader2, LockKeyhole } from "lucide-react";
+import { AuthLayout } from "@/components/auth-layout";
+import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,62 +56,74 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Enlace inválido</CardTitle>
+      <AuthLayout>
+        <Card className="w-full max-w-md border-border/60 bg-background/80 shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+          <CardHeader className="items-center text-center">
+            <CardTitle className="font-heading text-2xl font-semibold">
+              Enlace inválido
+            </CardTitle>
             <CardDescription>
-              El enlace de recuperación no es válido o ya expiró. Solicita uno nuevo.
+              El enlace de recuperación no es válido o ya expiró. Solicita uno
+              nuevo.
             </CardDescription>
           </CardHeader>
-          <CardFooter>
+          <CardFooter className="border-transparent bg-transparent">
             <Button
               render={<Link href="/forgot-password" />}
               variant="outline"
-              className="w-full"
+              className="h-10 w-full"
             >
               Solicitar nuevo enlace
             </Button>
           </CardFooter>
         </Card>
-      </main>
+      </AuthLayout>
     );
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">Restablecer contraseña</CardTitle>
+    <AuthLayout>
+      <Card className="w-full max-w-md border-border/60 bg-background/80 shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+        <CardHeader className="items-center text-center">
+          <CardTitle className="font-heading text-2xl font-semibold">
+            Restablecer contraseña
+          </CardTitle>
           <CardDescription>
-            Ingresa el código de 6 caracteres recibido por correo y tu nueva contraseña.
+            Ingresa el código de 6 caracteres recibido por correo y tu nueva
+            contraseña.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-2">
               <Label htmlFor="codigo">Código</Label>
-              <Input
-                id="codigo"
-                placeholder="ABCD12"
-                autoComplete="off"
-                className="font-mono uppercase"
-                aria-invalid={!!errors.codigo}
-                {...register("codigo")}
-              />
+              <div className="relative">
+                <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="codigo"
+                  placeholder="ABCD12"
+                  autoComplete="off"
+                  className="h-10 pl-9 font-mono uppercase"
+                  aria-invalid={!!errors.codigo}
+                  {...register("codigo")}
+                />
+              </div>
               {errors.codigo && (
                 <p className="text-sm text-destructive">{errors.codigo.message}</p>
               )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nuevaContrasena">Nueva contraseña</Label>
-              <Input
-                id="nuevaContrasena"
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={!!errors.nuevaContrasena}
-                {...register("nuevaContrasena")}
-              />
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <PasswordInput
+                  id="nuevaContrasena"
+                  autoComplete="new-password"
+                  className="pl-9"
+                  aria-invalid={!!errors.nuevaContrasena}
+                  {...register("nuevaContrasena")}
+                />
+              </div>
               {errors.nuevaContrasena && (
                 <p className="text-sm text-destructive">
                   {errors.nuevaContrasena.message}
@@ -117,30 +132,48 @@ export function ResetPasswordForm() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="confirmar">Confirmar contraseña</Label>
-              <Input
-                id="confirmar"
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={!!errors.confirmar}
-                {...register("confirmar")}
-              />
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <PasswordInput
+                  id="confirmar"
+                  autoComplete="new-password"
+                  className="pl-9"
+                  aria-invalid={!!errors.confirmar}
+                  {...register("confirmar")}
+                />
+              </div>
               {errors.confirmar && (
-                <p className="text-sm text-destructive">{errors.confirmar.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.confirmar.message}
+                </p>
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando…" : "Restablecer contraseña"}
+          <CardFooter className="flex-col gap-3 border-transparent bg-transparent">
+            <Button
+              type="submit"
+              className="h-10 w-full bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Guardando…
+                </>
+              ) : (
+                "Restablecer contraseña"
+              )}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/login" className="text-primary underline-offset-4 hover:underline">
-                Volver al inicio de sesión
-              </Link>
-            </p>
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <ArrowLeft className="size-3.5" />
+              Volver al inicio de sesión
+            </Link>
           </CardFooter>
         </form>
       </Card>
-    </main>
+    </AuthLayout>
   );
 }
