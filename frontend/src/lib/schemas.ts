@@ -45,23 +45,3 @@ export const resetSchema = z
   });
 
 export type ResetValues = z.infer<typeof resetSchema>;
-
-export const createUserSchema = z.object({
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres."),
-  correo: z
-    .string()
-    .min(1, "Ingresa el correo.")
-    .email("El correo no es válido."),
-  contrasena: z
-    .string()
-    .min(8, "La contraseña debe tener al menos 8 caracteres.")
-    .regex(
-      /^(?=.*[A-Za-z])(?=.*\d).+$/,
-      "La contraseña debe contener letras y números.",
-    ),
-  telefono: z.string().optional(),
-  rol: z.enum(["ADMIN", "EMPLEADO"]),
-});
-
-export type CreateUserValues = z.infer<typeof createUserSchema>;

@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeft, KeyRound, Loader2, LockKeyhole } from "lucide-react";
-import { AuthLayout } from "@/components/auth-layout";
-import { PasswordInput } from "@/components/password-input";
+import { ArrowLeft, KeyRound, LockKeyhole } from "lucide-react";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -56,39 +56,36 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <AuthLayout>
-        <Card className="w-full max-w-md border-border/60 bg-background/80 shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
-          <CardHeader className="items-center text-center">
-            <CardTitle className="font-heading text-2xl font-semibold">
-              Enlace inválido
-            </CardTitle>
-            <CardDescription>
-              El enlace de recuperación no es válido o ya expiró. Solicita uno
-              nuevo.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="border-transparent bg-transparent">
-            <Button
-              render={<Link href="/forgot-password" />}
-              variant="outline"
-              className="h-10 w-full"
-            >
-              Solicitar nuevo enlace
-            </Button>
-          </CardFooter>
-        </Card>
-      </AuthLayout>
+      <Card className="w-full max-w-xl border-border/60 bg-background/80 [--card-spacing:--spacing(6)] shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+        <CardHeader className="items-center text-center">
+          <CardTitle className="font-heading text-2xl font-semibold">
+            Enlace inválido
+          </CardTitle>
+          <CardDescription className="text-base">
+            El enlace de recuperación no es válido o ya expiró. Solicita uno
+            nuevo.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="border-transparent bg-transparent">
+          <Button
+            render={<Link href="/forgot-password" />}
+            variant="outline"
+            className="h-11 w-full"
+          >
+            Solicitar nuevo enlace
+          </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
   return (
-    <AuthLayout>
-      <Card className="w-full max-w-md border-border/60 bg-background/80 shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+    <Card className="w-full max-w-2xl border-border/60 bg-background/80 [--card-spacing:--spacing(7)] shadow-2xl shadow-brand-900/10 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-6 duration-500">
         <CardHeader className="items-center text-center">
-          <CardTitle className="font-heading text-2xl font-semibold">
+          <CardTitle className="font-heading text-3xl font-semibold">
             Restablecer contraseña
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-lg">
             Ingresa el código de 6 caracteres recibido por correo y tu nueva
             contraseña.
           </CardDescription>
@@ -96,74 +93,63 @@ export function ResetPasswordForm() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="codigo">Código</Label>
+              <Label htmlFor="codigo" className="text-base">Código</Label>
               <div className="relative">
                 <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="codigo"
                   placeholder="ABCD12"
                   autoComplete="off"
-                  className="h-10 pl-9 font-mono uppercase"
+                  className="h-11 pl-9 font-mono uppercase"
                   aria-invalid={!!errors.codigo}
                   {...register("codigo")}
                 />
               </div>
               {errors.codigo && (
-                <p className="text-sm text-destructive">{errors.codigo.message}</p>
+                <p className="text-sm text-violet-700">{errors.codigo.message}</p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="nuevaContrasena">Nueva contraseña</Label>
+              <Label htmlFor="nuevaContrasena" className="text-base">Nueva contraseña</Label>
               <div className="relative">
                 <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <PasswordInput
                   id="nuevaContrasena"
                   autoComplete="new-password"
-                  className="pl-9"
+                  className="h-11 pl-9"
                   aria-invalid={!!errors.nuevaContrasena}
                   {...register("nuevaContrasena")}
                 />
               </div>
               {errors.nuevaContrasena && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-violet-700">
                   {errors.nuevaContrasena.message}
                 </p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="confirmar">Confirmar contraseña</Label>
+              <Label htmlFor="confirmar" className="text-base">Confirmar contraseña</Label>
               <div className="relative">
                 <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <PasswordInput
                   id="confirmar"
                   autoComplete="new-password"
-                  className="pl-9"
+                  className="h-11 pl-9"
                   aria-invalid={!!errors.confirmar}
                   {...register("confirmar")}
                 />
               </div>
               {errors.confirmar && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-violet-700">
                   {errors.confirmar.message}
                 </p>
               )}
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-3 border-transparent bg-transparent">
-            <Button
-              type="submit"
-              className="h-10 w-full bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  Guardando…
-                </>
-              ) : (
-                "Restablecer contraseña"
-              )}
-            </Button>
+            <SubmitButton loading={isSubmitting} loadingLabel="Guardando…">
+              Restablecer contraseña
+            </SubmitButton>
             <Link
               href="/login"
               className="flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
@@ -174,6 +160,5 @@ export function ResetPasswordForm() {
           </CardFooter>
         </form>
       </Card>
-    </AuthLayout>
   );
 }

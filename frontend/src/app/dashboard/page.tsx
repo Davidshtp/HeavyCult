@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LogOutIcon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { BrandMark } from "@/components/brand-mark";
+import { BrandMark } from "@/components/branding/brand-mark";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">{usuario.correo}</p>
               </div>
-              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-600 to-violet-600 text-sm font-medium text-white">
+              <div className="grid size-9 place-items-center rounded-full bg-linear-to-br from-brand-600 to-violet-600 text-sm font-medium text-white">
                 {iniciales(usuario.nombre, usuario.apellido)}
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="mx-auto max-w-5xl space-y-6 p-4">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-r from-brand-800 via-brand-700 to-violet-700 text-white">
+        <Card className="relative overflow-hidden border-0 bg-linear-to-r from-brand-800 via-brand-700 to-violet-700 text-white">
           <div className="absolute inset-0 bg-grid opacity-60" aria-hidden />
           <div
             className="absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-3xl animate-float"
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                   <Button
                     type="submit"
                     disabled={creando}
-                    className="bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
+                    className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
                   >
                     {creando ? "Creando…" : "Crear usuario"}
                   </Button>

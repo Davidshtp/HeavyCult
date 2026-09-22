@@ -15,7 +15,7 @@ export function BrandMark({ className }: { className?: string }) {
         strokeLinejoin="round"
         fill="none"
       />
-      <circle cx="47" cy="43" r="7" fill="#c4b5fd" />
+      <circle cx="54" cy="48.5" r="4.5" fill="#c4b5fd" />
     </svg>
   );
 }
