@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { LogOutIcon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { BrandMark } from "@/components/branding/brand-mark";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -104,8 +102,7 @@ export default function DashboardPage() {
         const lista = await apiRequest<Usuario[]>("/users");
         setUsuarios(lista);
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Sesión inválida.");
+    } catch {
       router.replace("/login");
     } finally {
       setLoading(false);
@@ -129,13 +126,12 @@ export default function DashboardPage() {
         method: "PATCH",
         body: JSON.stringify({ estado }),
       });
-      toast.success("Estado actualizado.");
       if (id === usuario?.id_usuario) {
         setUsuario({ ...usuario, estado });
       }
       setUsuarios((prev) => prev.map((u) => (u.id_usuario === id ? { ...u, estado } : u)));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al actualizar el estado.");
+    } catch {
+      // Silenciado
     }
   }
 
@@ -143,7 +139,7 @@ export default function DashboardPage() {
     e.preventDefault();
     setCreando(true);
     try {
-      const res = await apiRequest<{ message: string }>("/users", {
+      await apiRequest<{ message: string }>("/users", {
         method: "POST",
         body: JSON.stringify({
           nombre: form.nombre.trim(),
@@ -154,12 +150,11 @@ export default function DashboardPage() {
           rol: form.rol,
         }),
       });
-      toast.success(res.message);
       setForm({ nombre: "", apellido: "", correo: "", contrasena: "", telefono: "", rol: "EMPLEADO" });
       const lista = await apiRequest<Usuario[]>("/users");
       setUsuarios(lista);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al crear el usuario.");
+    } catch {
+      // Silenciado
     } finally {
       setCreando(false);
     }
@@ -182,7 +177,12 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <div className="flex items-center gap-3">
-            <BrandMark className="size-9" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="HeavyCult"
+              className="size-9 rounded-[0.6rem]"
+            />
             <div>
               <p className="font-heading text-lg font-semibold text-foreground">
                 HeavyCult

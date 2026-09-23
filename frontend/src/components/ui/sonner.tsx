@@ -1,60 +1,32 @@
 "use client"
 
-import { useTheme } from "next-themes"
+import * as React from "react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const TOAST_VARS = {
-  "--normal-bg": "oklch(0.985 0.005 295)",
-  "--normal-border": "oklch(0.7 0.08 295 / 0.4)",
-  "--normal-text": "oklch(0.38 0.04 295)",
-  "--success-bg": "oklch(0.972 0.02 160)",
-  "--success-border": "oklch(0.7 0.12 160 / 0.4)",
-  "--success-text": "oklch(0.48 0.12 160)",
-  "--info-bg": "oklch(0.972 0.02 295)",
-  "--info-border": "oklch(0.68 0.12 295 / 0.42)",
-  "--info-text": "oklch(0.5 0.15 295)",
-  "--warning-bg": "oklch(0.972 0.02 90)",
-  "--warning-border": "oklch(0.74 0.11 90 / 0.45)",
-  "--warning-text": "oklch(0.52 0.12 70)",
-  "--error-bg": "oklch(0.955 0.02 355)",
-  "--error-border": "oklch(0.66 0.12 355 / 0.4)",
-  "--error-text": "oklch(0.52 0.18 355)",
-  "--border-radius": "1.1rem",
+  "--normal-bg": "oklch(0.985 0.01 295)",
+  "--normal-text": "oklch(0.25 0.09 295)",
+  "--normal-border": "oklch(0.88 0.04 295 / 0.55)",
+  "--success-bg": "oklch(0.97 0.03 295)",
+  "--success-text": "oklch(0.3 0.13 295)",
+  "--success-border": "oklch(0.84 0.07 295 / 0.6)",
+  "--info-bg": "oklch(0.97 0.02 275)",
+  "--info-text": "oklch(0.32 0.1 280)",
+  "--info-border": "oklch(0.86 0.05 280 / 0.55)",
+  "--warning-bg": "oklch(0.965 0.06 300)",
+  "--warning-text": "oklch(0.35 0.13 305)",
+  "--warning-border": "oklch(0.84 0.09 305 / 0.6)",
+  "--error-bg": "oklch(0.96 0.04 320)",
+  "--error-text": "oklch(0.42 0.19 320)",
+  "--error-border": "oklch(0.82 0.1 320 / 0.6)",
 } as React.CSSProperties
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
+function Toaster({ ...props }: ToasterProps) {
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="dark"
       className="toaster group"
-      icons={{
-        success: (
-          <CircleCheckIcon className="size-4" />
-        ),
-        info: (
-          <InfoIcon className="size-4" />
-        ),
-        warning: (
-          <TriangleAlertIcon className="size-4" />
-        ),
-        error: (
-          <OctagonXIcon className="size-4" />
-        ),
-        loading: (
-          <Loader2Icon className="size-4 animate-spin" />
-        ),
-      }}
       style={TOAST_VARS}
-      toastOptions={{
-        classNames: {
-          toast: "group-[.toaster]:!items-start",
-          title: "group-[.toaster]:!text-[14px] group-[.toaster]:!font-semibold group-[.toaster]:!tracking-tight",
-          description: "group-[.toaster]:!text-[13px] group-[.toaster]:!opacity-80",
-        },
-      }}
       {...props}
     />
   )

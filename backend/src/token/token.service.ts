@@ -35,7 +35,7 @@ export class TokenService {
       const vigenciaMinutos =
         this.configService.get<number>(TOKEN_EXPIRES_MINUTES) ?? 10;
       const maxIntentos =
-        this.configService.get<number>(TOKEN_MAX_ATTEMPTS) ?? 5;
+        this.configService.get<number>(TOKEN_MAX_ATTEMPTS) ?? 3;
 
       const fechaExpiracion = new Date(
         Date.now() + vigenciaMinutos * 60 * 1000,

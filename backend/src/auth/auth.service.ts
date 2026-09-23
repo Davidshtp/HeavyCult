@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -52,9 +53,7 @@ export class AuthService {
       usuario.estado === EstadoUsuario.BLOQUEADO ||
       (usuario.bloqueado_hasta && usuario.bloqueado_hasta > new Date())
     ) {
-      throw new UnauthorizedException(
-        'Cuenta bloqueada temporalmente por múltiples intentos fallidos.',
-      );
+      throw new ForbiddenException(this.mensajeBloqueo(usuario));
     }
 
     const contrasenaValida = await bcrypt.compare(
@@ -63,12 +62,28 @@ export class AuthService {
     );
 
     if (!contrasenaValida) {
-      await this.userService.registrarIntentoFallido(usuario);
+      const trasIntento =
+        await this.userService.registrarIntentoFallido(usuario);
+      if (
+        trasIntento.bloqueado_hasta &&
+        trasIntento.bloqueado_hasta > new Date()
+      ) {
+        throw new ForbiddenException(this.mensajeBloqueo(trasIntento));
+      }
       throw new UnauthorizedException('Credenciales inválidas.');
     }
 
     await this.userService.registrarAccesoExitoso(usuario);
     return usuario;
+  }
+
+  private mensajeBloqueo(usuario: Usuario): string {
+    const minutosRestantes = usuario.bloqueado_hasta
+      ? Math.ceil((usuario.bloqueado_hasta.getTime() - Date.now()) / 60000)
+      : 0;
+    const minutos = Math.max(minutosRestantes, 0);
+    const unidad = `minuto${minutos === 1 ? '' : 's'}`;
+    return `Cuenta bloqueada temporalmente por múltiples intentos fallidos. Inténtalo en ${minutos} ${unidad}.`;
   }
 
   firmarToken(usuario: Usuario): string {
@@ -93,8 +108,7 @@ export class AuthService {
 
     // Mensaje genérico para no revelar si el correo existe (evita enumeración).
     return {
-      message:
-        'Recibirás un enlace para restablecer tu contraseña.',
+      message: 'Recibirás un enlace para restablecer tu contraseña.',
     };
   }
 
@@ -110,7 +124,7 @@ export class AuthService {
         secret: this.configService.get<string>(JWT_RECOVERY_SECRET),
         expiresIn:
           this.configService.get<number>(JWT_RECOVERY_EXPIRES_IN_SECONDS) ??
-          300,
+          600,
       },
     );
 

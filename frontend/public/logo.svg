@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#4f46e5"/>
-  <path d="M21 15v34M43 15v34M21 32h22" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="53" cy="44.5" r="4.5" fill="#c4b5fd"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="hc-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="0.5" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#hc-gradient)"/>
+  <rect width="64" height="64" rx="17" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+  <path d="M22 15v34M42 15v34M22 32h20" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="52.5" cy="47" r="4.5" fill="#e9d5ff"/>
+  <circle cx="30" cy="44" r="2.2" fill="rgba(255,255,255,0.4)"/>
 </svg>

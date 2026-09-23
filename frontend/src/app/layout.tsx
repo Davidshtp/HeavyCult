@@ -1,28 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Sora } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "HeavyCult",
-  description: "Sistema ERP de HeavyCult",
+  title: {
+    default: "HeavyCult",
+    template: "%s · HeavyCult",
+  },
+  description:
+    "ERP de HeavyCult: campañas, ventas y pedidos en un solo ecosistema.",
   icons: {
     icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
   },
 };
 
@@ -32,12 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} antialiased`}
-      >
+    <html lang="es" className="dark" suppressHydrationWarning>
+      <body className={`${ibmPlexMono.variable} antialiased`}>
         {children}
-        <Toaster position="top-center" gap={10} visibleToasts={4} />
+        <Toaster
+          position="top-right"
+          gap={6}
+          visibleToasts={1}
+          duration={2500}
+        />
       </body>
     </html>
   );

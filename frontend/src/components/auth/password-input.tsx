@@ -20,6 +20,7 @@ function PasswordInput({
       />
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
         className="absolute inset-y-0 right-0 grid w-8 place-items-center text-muted-foreground transition-colors hover:text-foreground"
