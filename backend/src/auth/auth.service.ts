@@ -16,13 +16,17 @@ import {
 } from '../config/constants';
 import { TokenService } from '../token/token.service';
 import { TipoToken } from '../token/entity/token.entity';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { MailService } from '../mail/mail.service';
 import { Usuario } from '../user/entity/usuario.entity';
 import { EstadoUsuario } from '../user/entity/usuario.entity';
 import { UserService } from '../user/user.service';
+import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto';
+import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { InicioSesionDto } from './dto/inicio-sesion.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SubirImagenDto } from './dto/subir-imagen.dto';
 
 @Injectable()
 export class AuthService {
@@ -32,6 +36,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly tokenService: TokenService,
     private readonly mailService: MailService,
+    private readonly cloudinaryService: CloudinaryService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -97,6 +102,61 @@ export class AuthService {
 
   async getUsuarioPorId(idUsuario: number): Promise<Usuario> {
     return this.userService.findById(idUsuario);
+  }
+
+  async actualizarPerfil(
+    idUsuario: number,
+    dto: ActualizarPerfilDto,
+  ): Promise<Usuario> {
+    return this.userService.actualizarPerfil(idUsuario, dto);
+  }
+
+  async subirAvatar(
+    idUsuario: number,
+    dto: SubirImagenDto,
+  ): Promise<{ url_imagen: string }> {
+    const { url_imagen } = await this.cloudinaryService.subirAvatar(
+      idUsuario,
+      dto.imagen,
+    );
+    await this.userService.guardarUrlImagen(idUsuario, url_imagen);
+    return { url_imagen };
+  }
+
+  async eliminarAvatar(idUsuario: number): Promise<{ url_imagen: null }> {
+    await this.cloudinaryService.eliminarAvatar(idUsuario);
+    await this.userService.guardarUrlImagen(idUsuario, null);
+    return { url_imagen: null };
+  }
+
+  async cambiarContrasena(
+    idUsuario: number,
+    dto: CambiarContrasenaDto,
+  ): Promise<{ message: string }> {
+    const usuario = await this.userService.findById(idUsuario);
+
+    const esValida = await bcrypt.compare(
+      dto.contrasenaActual,
+      usuario.contrasena,
+    );
+    if (!esValida) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta.');
+    }
+
+    const esIgualALaAnterior = await bcrypt.compare(
+      dto.nuevaContrasena,
+      usuario.contrasena,
+    );
+    if (esIgualALaAnterior) {
+      throw new BadRequestException(
+        'La nueva contraseña no puede ser igual a la anterior.',
+      );
+    }
+
+    const hash = await this.userService.hashedPassword(dto.nuevaContrasena);
+    await this.userService.actualizarContrasena(idUsuario, hash);
+
+    return { message: 'Contraseña actualizada correctamente.' };
   }
 
   async solicitarRecuperacion(dto: ForgotPasswordDto) {

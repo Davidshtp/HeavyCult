@@ -65,7 +65,7 @@ export function LoginForm({ onForgot }: { onForgot?: () => void }) {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <div className="grid gap-2">
-          <Label htmlFor="correo" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+          <Label htmlFor="correo" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
             Correo electrónico
           </Label>
           <div className="relative">
@@ -81,7 +81,7 @@ export function LoginForm({ onForgot }: { onForgot?: () => void }) {
             />
           </div>
           {errors.correo && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.correo.message}
             </p>
           )}
@@ -89,14 +89,14 @@ export function LoginForm({ onForgot }: { onForgot?: () => void }) {
 
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="contrasena" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+            <Label htmlFor="contrasena" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
               Contraseña
             </Label>
             <button
               type="button"
               tabIndex={-1}
               onClick={onForgot}
-              className="text-sm font-medium text-brand-300 transition-colors hover:text-brand-200"
+              className="text-base font-medium text-brand-300 transition-colors hover:text-brand-200"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -113,7 +113,7 @@ export function LoginForm({ onForgot }: { onForgot?: () => void }) {
             />
           </div>
           {errors.contrasena && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.contrasena.message}
             </p>
           )}
@@ -123,7 +123,7 @@ export function LoginForm({ onForgot }: { onForgot?: () => void }) {
           Iniciar sesión
         </SubmitButton>
 
-        <p className="text-center text-xs text-white/25">
+        <p className="text-center text-sm text-white/25">
           Acceso restringido a personal autorizado de HeavyCult.
         </p>
       </form>

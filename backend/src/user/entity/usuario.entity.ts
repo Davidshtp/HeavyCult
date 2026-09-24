@@ -44,7 +44,7 @@ export class Usuario {
   contrasena: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true, name: 'telefono' })
-  telefono?: string;
+  telefono?: string | null;
 
   @Column({
     type: 'enum',
@@ -63,7 +63,7 @@ export class Usuario {
   estado: EstadoUsuario;
 
   @Column({ type: 'varchar', length: 500, nullable: true, name: 'url_imagen' })
-  url_imagen?: string;
+  url_imagen?: string | null;
 
   @CreateDateColumn({
     type: 'timestamp',

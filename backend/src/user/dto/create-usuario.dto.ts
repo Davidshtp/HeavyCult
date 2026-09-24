@@ -25,7 +25,10 @@ export class CreateUsuarioDto {
 
   @IsOptional()
   @IsString({ message: 'El teléfono debe ser un texto.' })
-  @MaxLength(20, { message: 'El teléfono no puede superar 20 caracteres.' })
+  @Matches(/^3\d{9}$/, {
+    message:
+      'El teléfono debe tener 10 dígitos (formato colombiano, ej. 3001234567).',
+  })
   telefono?: string;
 
   @IsString({ message: 'La contraseña debe ser un texto.' })

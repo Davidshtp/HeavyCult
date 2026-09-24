@@ -38,6 +38,10 @@ export const envValidationSchema = Joi.object({
   BREVO_API_KEY: Joi.string().allow('').optional(),
   MAIL_FROM: Joi.string().allow('').optional(),
 
+  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+  CLOUDINARY_API_KEY: Joi.string().required(),
+  CLOUDINARY_API_SECRET: Joi.string().required(),
+
   ADMIN_NOMBRE: Joi.string().required(),
   ADMIN_APELLIDO: Joi.string().allow('').optional(),
   ADMIN_EMAIL: Joi.string().email().required(),

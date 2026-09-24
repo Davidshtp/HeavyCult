@@ -15,6 +15,13 @@ import {
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { EstadoUsuario, RolUsuario, Usuario } from './entity/usuario.entity';
 
+export interface ActualizarPerfilCampos {
+  nombre?: string;
+  apellido?: string;
+  correo?: string;
+  telefono?: string | null;
+}
+
 @Injectable()
 export class UserService {
   constructor(
@@ -68,6 +75,36 @@ export class UserService {
   ): Promise<Usuario> {
     const usuario = await this.findById(idUsuario);
     usuario.estado = estado;
+    return this.usuarioRepository.save(usuario);
+  }
+
+  async actualizarPerfil(
+    idUsuario: number,
+    campos: ActualizarPerfilCampos,
+  ): Promise<Usuario> {
+    if (campos.correo !== undefined) {
+      const existente = await this.findUserByEmail(campos.correo);
+      if (existente && existente.id_usuario !== idUsuario) {
+        throw new ConflictException('Ya existe un usuario con ese correo.');
+      }
+    }
+
+    const usuario = await this.findById(idUsuario);
+
+    if (campos.nombre !== undefined) usuario.nombre = campos.nombre;
+    if (campos.apellido !== undefined) usuario.apellido = campos.apellido;
+    if (campos.correo !== undefined) usuario.correo = campos.correo;
+    if (campos.telefono !== undefined) usuario.telefono = campos.telefono;
+
+    return this.usuarioRepository.save(usuario);
+  }
+
+  async guardarUrlImagen(
+    idUsuario: number,
+    urlImagen: string | null,
+  ): Promise<Usuario> {
+    const usuario = await this.findById(idUsuario);
+    usuario.url_imagen = urlImagen;
     return this.usuarioRepository.save(usuario);
   }
 

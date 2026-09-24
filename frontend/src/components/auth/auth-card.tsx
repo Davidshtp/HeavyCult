@@ -29,11 +29,11 @@ export function AuthCard({
 
       <header className="mb-8 flex flex-col items-center gap-2 text-center">
         {icon ? <div className="mb-2 flex justify-center">{icon}</div> : null}
-        <h1 className="font-heading text-[1.75rem] font-bold tracking-wide text-white">
+        <h1 className="font-heading text-[2rem] font-bold tracking-wide text-white">
           {title}
         </h1>
         {subtitle ? (
-          <p className="max-w-sm text-[0.925rem] leading-relaxed text-white/45">
+          <p className="max-w-sm text-base leading-relaxed text-white/45">
             {subtitle}
           </p>
         ) : null}

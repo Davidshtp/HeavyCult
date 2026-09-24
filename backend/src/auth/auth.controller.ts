@@ -1,10 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
+  Put,
   Req,
   Request,
   Res,
@@ -15,9 +18,12 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { COOKIE_MAX_AGE_SECONDS, COOKIE_SECURE } from '../config/constants';
 import { AuthService } from './auth.service';
+import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto';
+import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { InicioSesionDto } from './dto/inicio-sesion.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SubirImagenDto } from './dto/subir-imagen.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRecoveryGuard } from './guards/jwt-recovery.guard';
 import { AuthUser } from './strategies/jwt.strategy';
@@ -60,6 +66,39 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async obtenerPerfil(@Req() req: { user: AuthUser }) {
     return this.authService.getUsuarioPorId(req.user.id_usuario);
+  }
+
+  @Patch('perfil')
+  @UseGuards(JwtAuthGuard)
+  async actualizarPerfil(
+    @Req() req: { user: AuthUser },
+    @Body() dto: ActualizarPerfilDto,
+  ) {
+    return this.authService.actualizarPerfil(req.user.id_usuario, dto);
+  }
+
+  @Put('perfil/imagen')
+  @UseGuards(JwtAuthGuard)
+  async subirAvatar(
+    @Req() req: { user: AuthUser },
+    @Body() dto: SubirImagenDto,
+  ) {
+    return this.authService.subirAvatar(req.user.id_usuario, dto);
+  }
+
+  @Delete('perfil/imagen')
+  @UseGuards(JwtAuthGuard)
+  async eliminarAvatar(@Req() req: { user: AuthUser }) {
+    return this.authService.eliminarAvatar(req.user.id_usuario);
+  }
+
+  @Patch('perfil/contrasena')
+  @UseGuards(JwtAuthGuard)
+  async cambiarContrasena(
+    @Req() req: { user: AuthUser },
+    @Body() dto: CambiarContrasenaDto,
+  ) {
+    return this.authService.cambiarContrasena(req.user.id_usuario, dto);
   }
 
   @Post('logout')

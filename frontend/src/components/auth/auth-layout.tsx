@@ -23,10 +23,10 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 
       <footer id="soporte" className="relative z-10 scroll-mt-24 border-t border-white/10">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-4 py-6 sm:px-6">
-          <p className="font-mono text-[0.7rem] font-medium uppercase tracking-[0.3em] text-white/30">
+          <p className="font-mono text-[0.85rem] font-medium uppercase tracking-[0.3em] text-white/30">
             ── HeavyCult v1.0 · ERP ──
           </p>
-          <p className="font-mono text-xs text-white/25">
+          <p className="font-mono text-sm text-white/25">
             soporte@heavycult.co
           </p>
         </div>

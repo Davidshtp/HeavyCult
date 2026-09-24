@@ -61,7 +61,7 @@ export function ResetPasswordForm() {
       >
         <Link
           href="/forgot-password"
-          className="flex h-11 w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-sm font-medium text-white transition-colors hover:bg-white/10"
+          className="flex h-11 w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-base font-medium text-white transition-colors hover:bg-white/10"
         >
           Solicitar nuevo enlace
         </Link>
@@ -77,7 +77,7 @@ export function ResetPasswordForm() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <div className="grid gap-2">
-          <Label htmlFor="codigo" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+          <Label htmlFor="codigo" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
             Código de recuperación
           </Label>
           <div className="relative">
@@ -92,14 +92,14 @@ export function ResetPasswordForm() {
             />
           </div>
           {errors.codigo && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.codigo.message}
             </p>
           )}
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="nuevaContrasena" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+          <Label htmlFor="nuevaContrasena" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
             Nueva contraseña
           </Label>
           <div className="relative">
@@ -114,14 +114,14 @@ export function ResetPasswordForm() {
             />
           </div>
           {errors.nuevaContrasena && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.nuevaContrasena.message}
             </p>
           )}
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="confirmar" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+          <Label htmlFor="confirmar" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
             Confirmar contraseña
           </Label>
           <div className="relative">
@@ -136,7 +136,7 @@ export function ResetPasswordForm() {
             />
           </div>
           {errors.confirmar && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.confirmar.message}
             </p>
           )}
@@ -148,7 +148,7 @@ export function ResetPasswordForm() {
 
         <Link
           href="/login"
-          className="mx-auto flex items-center gap-1.5 text-sm font-medium text-white/45 transition-colors hover:text-white"
+          className="mx-auto flex items-center gap-1.5 text-base font-medium text-white/45 transition-colors hover:text-white"
         >
           <ArrowLeft className="size-3.5" />
           Volver al inicio de sesión

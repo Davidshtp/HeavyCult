@@ -19,7 +19,7 @@ export function AuthHeader() {
             alt=""
             className="size-7 rounded-[0.35rem]"
           />
-          <span className="font-heading text-base font-bold tracking-[0.2em] text-white">
+          <span className="font-heading text-lg font-bold tracking-[0.2em] text-white">
             Heavy<span className="text-brand-400">Cult</span>
           </span>
         </a>
@@ -32,7 +32,7 @@ export function AuthHeader() {
             <a
               key={s.label}
               href={s.href}
-              className="font-mono text-[0.7rem] font-medium uppercase tracking-[0.18em] text-white/40 transition-colors hover:text-brand-300"
+              className="font-mono text-[0.85rem] font-medium uppercase tracking-[0.18em] text-white/40 transition-colors hover:text-brand-300"
             >
               {s.label}
             </a>
@@ -41,7 +41,7 @@ export function AuthHeader() {
 
         <a
           href="#ingresar"
-          className="inline-flex h-9 items-center rounded-lg border border-brand-500/40 bg-brand-500/10 px-4 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-brand-300 transition-colors hover:bg-brand-500/20 hover:text-brand-200"
+          className="inline-flex h-10 items-center rounded-lg border border-brand-500/40 bg-brand-500/10 px-5 font-mono text-[0.85rem] font-semibold uppercase tracking-[0.18em] text-brand-300 transition-colors hover:bg-brand-500/20 hover:text-brand-200"
         >
           Ingresar
         </a>

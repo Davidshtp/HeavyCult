@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import {
   DB_DATABASE,
@@ -50,6 +51,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     TokenModule,
     MailModule,
+    CloudinaryModule,
     AuthModule,
   ],
   controllers: [AppController],

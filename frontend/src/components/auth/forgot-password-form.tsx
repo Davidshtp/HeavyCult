@@ -71,7 +71,7 @@ export function ForgotPasswordForm({
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <div className="grid gap-2">
-          <Label htmlFor="correo" className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-white/40">
+          <Label htmlFor="correo" className="text-[0.85rem] font-medium uppercase tracking-[0.16em] text-white/40">
             Correo electrónico
           </Label>
           <div className="relative">
@@ -87,7 +87,7 @@ export function ForgotPasswordForm({
             />
           </div>
           {errors.correo && (
-            <p className="text-sm font-medium text-brand-300">
+            <p className="text-base font-medium text-brand-300">
               {errors.correo.message}
             </p>
           )}
@@ -101,7 +101,7 @@ export function ForgotPasswordForm({
           <button
             type="button"
             onClick={onBack}
-            className="mx-auto flex items-center gap-1.5 text-sm font-medium text-white/45 transition-colors hover:text-white"
+            className="mx-auto flex items-center gap-1.5 text-base font-medium text-white/45 transition-colors hover:text-white"
           >
             <ArrowLeft className="size-3.5" />
             Volver al inicio de sesión
@@ -109,7 +109,7 @@ export function ForgotPasswordForm({
         ) : (
           <Link
             href="/login"
-            className="mx-auto flex items-center gap-1.5 text-sm font-medium text-white/45 transition-colors hover:text-white"
+            className="mx-auto flex items-center gap-1.5 text-base font-medium text-white/45 transition-colors hover:text-white"
           >
             <ArrowLeft className="size-3.5" />
             Volver al inicio de sesión

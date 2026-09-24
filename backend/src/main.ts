@@ -2,6 +2,7 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import {
@@ -10,8 +11,10 @@ import {
   SERVER_PORT,
 } from './config/constants';
 
+const CUERPO_MAXIMO_JSON = '4mb';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
 
   const configService = app.get(ConfigService);
 
@@ -22,6 +25,7 @@ async function bootstrap() {
 
   app.use(helmet());
   app.use(cookieParser());
+  app.use(express.json({ limit: CUERPO_MAXIMO_JSON }));
 
   app.enableCors({
     origin: frontendUrl,
