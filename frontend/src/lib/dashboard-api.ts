@@ -3,17 +3,18 @@
 //   - PUT    /auth/perfil/imagen     → subirImagenPerfil (Foto en Cloudinary)
 //   - DELETE /auth/perfil/imagen     → eliminarImagenPerfil
 //   - PATCH  /auth/perfil/contrasena → cambiarMiContrasena
+//   - PATCH  /users/:id/rol          → cambiarRolUsuario (solo admin)
+//   - GET    /integraciones          → listarIntegraciones (solo admin)
+//   - POST   /integraciones          → crearIntegracion (solo admin)
+//   - PATCH  /integraciones/:id      → actualizarIntegracion (solo admin)
+//   - DELETE /integraciones/:id      → eliminarIntegracion (solo admin)
+//   - POST   /integraciones/:id/probar → probarConexionIntegracion (solo admin)
 // Pendiente de conectar (backends aún no implementados):
-//   - GET    /integraciones/dropi/{sku} → buscarProductoDropi (fuente de verdad Dropi)
-//   - CRUD   /integraciones             → integraciones (API keys)
-//   - CRUD   /productos                 → catálogo Dropi
-//   - PATCH  /users/:id                 → editar usuario (solo admin)
+//   - CRUD   /productos                 → catálogo de productos
 import { apiRequest } from "@/lib/api";
 import {
-  enmascararApiKey,
   generarProductoDropiSintetico,
   MOCK_DROPI_REGISTRO,
-  MOCK_INTEGRACIONES,
   MOCK_PRODUCTOS,
 } from "@/lib/dashboard-mock";
 import type {
@@ -72,39 +73,44 @@ export async function cambiarMiContrasena(campos: {
 }
 
 // ------------------------------------------------------------------ Usuarios
-export interface UsuarioEdicion {
+export interface UsuarioNuevo {
   nombre: string;
   apellido: string;
   correo: string;
+  contrasena: string;
   telefono?: string;
   rol: RolUsuario;
 }
 
-export async function actualizarUsuario(
+export async function crearUsuario(campos: UsuarioNuevo): Promise<Usuario> {
+  const { usuario } = await apiRequest<{ usuario: Usuario }>("/users", {
+    method: "POST",
+    body: JSON.stringify(campos),
+  });
+  return usuario;
+}
+
+export async function cambiarRolUsuario(
   id: number,
-  campos: UsuarioEdicion,
+  rol: RolUsuario,
 ): Promise<Usuario> {
-  await esperar();
-  return {
-    id_usuario: id,
-    nombre: campos.nombre,
-    apellido: campos.apellido,
-    correo: campos.correo,
-    telefono: campos.telefono ?? null,
-    rol: campos.rol,
-    estado: "ACTIVO",
-    url_imagen: null,
-    fecha_registro: new Date().toISOString(),
-    ultimo_acceso: null,
-    intentos_fallidos: 0,
-    bloqueado_hasta: null,
-  };
+  const { usuario } = await apiRequest<{ usuario: Usuario }>(
+    `/users/${id}/rol`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ rol }),
+    },
+  );
+  return usuario;
+}
+
+export async function eliminarUsuario(id: number): Promise<void> {
+  await apiRequest<{ message: string }>(`/users/${id}`, {
+    method: "DELETE",
+  });
 }
 
 // ------------------------------------------------------------- Integraciones
-let integraciones: Integracion[] = clonar(MOCK_INTEGRACIONES);
-let siguienteIdIntegracion = 1000;
-
 export interface IntegracionInput {
   plataforma: PlataformaIntegracion;
   etiqueta: string;
@@ -114,55 +120,80 @@ export interface IntegracionInput {
 }
 
 export async function listarIntegraciones(): Promise<Integracion[]> {
-  await esperar();
-  return clonar(integraciones);
+  return apiRequest<Integracion[]>("/integraciones");
 }
 
 export async function crearIntegracion(input: IntegracionInput): Promise<Integracion> {
-  await esperar();
-  const nueva: Integracion = {
-    id_integracion: siguienteIdIntegracion++,
-    plataforma: input.plataforma,
-    etiqueta: input.etiqueta,
-    api_key_enmascarada: enmascararApiKey(input.api_key),
-    config: input.config ?? null,
-    activo: input.activo ?? true,
-    fecha_creacion: new Date().toISOString(),
-  };
-  integraciones = [nueva, ...integraciones];
-  return clonar(nueva);
+  const { integracion } = await apiRequest<{ integracion: Integracion }>(
+    "/integraciones",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        plataforma: input.plataforma,
+        etiqueta: input.etiqueta,
+        api_key: input.api_key,
+        config: input.config ?? null,
+      }),
+    },
+  );
+  return integracion;
 }
 
 export async function actualizarIntegracion(
   id: number,
   cambios: { etiqueta?: string; api_key?: string; activo?: boolean },
 ): Promise<Integracion> {
-  await esperar();
-  integraciones = integraciones.map((c) => {
-    if (c.id_integracion !== id) return c;
-    return {
-      ...c,
-      etiqueta:
-        cambios.etiqueta !== undefined ? cambios.etiqueta : c.etiqueta,
-      activo: cambios.activo !== undefined ? cambios.activo : c.activo,
-      api_key_enmascarada:
-        cambios.api_key !== undefined && cambios.api_key !== ""
-          ? enmascararApiKey(cambios.api_key)
-          : c.api_key_enmascarada,
-    };
-  });
-  return clonar(integraciones.find((c) => c.id_integracion === id)!);
+  const cuerpo: Record<string, string | boolean> = {};
+  if (cambios.etiqueta !== undefined) cuerpo.etiqueta = cambios.etiqueta;
+  if (cambios.api_key !== undefined && cambios.api_key !== "") {
+    cuerpo.api_key = cambios.api_key;
+  }
+  if (cambios.activo !== undefined) cuerpo.activo = cambios.activo;
+
+  const { integracion } = await apiRequest<{ integracion: Integracion }>(
+    `/integraciones/${id}`,
+    { method: "PATCH", body: JSON.stringify(cuerpo) },
+  );
+  return integracion;
 }
 
 export async function eliminarIntegracion(id: number): Promise<void> {
-  await esperar();
-  integraciones = integraciones.filter((c) => c.id_integracion !== id);
+  await apiRequest<{ message: string }>(`/integraciones/${id}`, {
+    method: "DELETE",
+  });
 }
 
-export async function probarConexionIntegracion(id: number): Promise<boolean> {
-  await esperar(700);
-  const conexion = integraciones.find((c) => c.id_integracion === id);
-  return conexion?.activo ?? false;
+export interface ResultadoProbarIntegracion {
+  ok: boolean;
+  mensaje: string;
+}
+
+export async function probarConexionIntegracion(
+  id: number,
+): Promise<ResultadoProbarIntegracion> {
+  return apiRequest<ResultadoProbarIntegracion>(`/integraciones/${id}/probar`, {
+    method: "POST",
+  });
+}
+
+export interface ConectarShopifyInput {
+  shop: string;
+  client_id: string;
+  client_secret: string;
+}
+
+export interface ConectarShopifyResultado {
+  ok: boolean;
+  mensaje: string;
+}
+
+export async function conectarShopify(
+  input: ConectarShopifyInput,
+): Promise<ConectarShopifyResultado> {
+  return apiRequest<ConectarShopifyResultado>("/auth/shopify/conectar", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 // ----------------------------------------------------------------- Productos

@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PencilIcon, UsersIcon } from "lucide-react";
+import { SearchIcon, Trash2Icon, UserCog, UserPlus, UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RolBadge } from "@/components/dashboard/rol-badge";
-import { EstadoBadge } from "@/components/dashboard/estado-badge";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { usePerfil } from "@/components/dashboard/perfil-context";
-import { UsuarioEditFormModal } from "@/components/dashboard/configuraciones/usuario-edit-form";
+import { Avatar } from "@/components/dashboard/avatar";
+import { UsuarioFormModal } from "@/components/dashboard/configuraciones/usuario-form-modal";
+import { UsuarioRolModal } from "@/components/dashboard/configuraciones/usuario-rol-modal";
+import { UsuarioEliminarModal } from "@/components/dashboard/configuraciones/usuario-eliminar-modal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,34 +38,29 @@ import {
 } from "@/components/ui/table";
 import { apiRequest } from "@/lib/api";
 import type { EstadoUsuario, RolUsuario, Usuario } from "@/lib/types";
-import type { UsuarioEdicion } from "@/lib/dashboard-api";
-import { formatFecha } from "@/lib/format";
-import { iniciales } from "@/components/dashboard/avatar";
+import { formatTiempoRelativo } from "@/lib/format";
 
 const ESTADOS: EstadoUsuario[] = ["ACTIVO", "INACTIVO", "BLOQUEADO"];
-const ROLES: RolUsuario[] = ["ADMIN", "EMPLEADO"];
-
-const labelCls =
-  "text-[0.8rem] font-semibold tracking-[0.18em] text-muted-foreground uppercase";
 
 export function UsuariosPanel() {
   const router = useRouter();
   const { usuario } = usePerfil();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [creando, setCreando] = useState(false);
-  const [editando, setEditando] = useState<{ abierto: boolean; usuario: Usuario | null }>({
-    abierto: false,
-    usuario: null,
-  });
-  const [form, setForm] = useState({
-    nombre: "",
-    apellido: "",
-    correo: "",
-    contrasena: "",
-    telefono: "",
-    rol: "EMPLEADO" as RolUsuario,
-  });
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroRol, setFiltroRol] = useState<"TODOS" | RolUsuario>("TODOS");
+  const [filtroEstado, setFiltroEstado] = useState<"TODOS" | EstadoUsuario>(
+    "TODOS",
+  );
+  const [crearAbierto, setCrearAbierto] = useState(false);
+  const [cambioRol, setCambioRol] = useState<{
+    abierto: boolean;
+    usuario: Usuario | null;
+  }>({ abierto: false, usuario: null });
+  const [eliminando, setEliminando] = useState<{
+    abierto: boolean;
+    usuario: Usuario | null;
+  }>({ abierto: false, usuario: null });
 
   useEffect(() => {
     if (!usuario) return;
@@ -86,34 +81,36 @@ export function UsuariosPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
 
-  function cambiar(campo: keyof typeof form, valor: string) {
-    setForm((f) => ({ ...f, [campo]: valor }));
-  }
+  const stats = useMemo(
+    () => [
+      { etiqueta: "Total", valor: usuarios.length },
+      {
+        etiqueta: "Activos",
+        valor: usuarios.filter((u) => u.estado === "ACTIVO").length,
+      },
+      {
+        etiqueta: "Administradores",
+        valor: usuarios.filter((u) => u.rol === "ADMIN").length,
+      },
+      {
+        etiqueta: "Empleados",
+        valor: usuarios.filter((u) => u.rol === "EMPLEADO").length,
+      },
+    ],
+    [usuarios],
+  );
 
-  async function crearUsuario(e: React.FormEvent) {
-    e.preventDefault();
-    setCreando(true);
-    try {
-      await apiRequest<{ message: string }>("/users", {
-        method: "POST",
-        body: JSON.stringify({
-          nombre: form.nombre.trim(),
-          apellido: form.apellido.trim(),
-          correo: form.correo.trim(),
-          contrasena: form.contrasena,
-          telefono: form.telefono.trim() || undefined,
-          rol: form.rol,
-        }),
-      });
-      setForm({ nombre: "", apellido: "", correo: "", contrasena: "", telefono: "", rol: "EMPLEADO" });
-      setUsuarios(await apiRequest<Usuario[]>("/users"));
-      toast.success("Usuario creado correctamente.");
-    } catch {
-      toast.error("No se pudo crear el usuario.");
-    } finally {
-      setCreando(false);
-    }
-  }
+  const usuariosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return usuarios.filter((u) => {
+      const coincideTexto =
+        !q ||
+        `${u.nombre} ${u.apellido} ${u.correo}`.toLowerCase().includes(q);
+      const coincideRol = filtroRol === "TODOS" || u.rol === filtroRol;
+      const coincideEstado = filtroEstado === "TODOS" || u.estado === filtroEstado;
+      return coincideTexto && coincideRol && coincideEstado;
+    });
+  }, [usuarios, busqueda, filtroRol, filtroEstado]);
 
   async function cambiarEstado(id: number, estado: EstadoUsuario) {
     try {
@@ -121,136 +118,74 @@ export function UsuariosPanel() {
         method: "PATCH",
         body: JSON.stringify({ estado }),
       });
-      setUsuarios((prev) => prev.map((u) => (u.id_usuario === id ? { ...u, estado } : u)));
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id_usuario === id ? { ...u, estado } : u)),
+      );
       toast.success(`Estado actualizado a ${estado}.`);
     } catch {
       toast.error("No se pudo actualizar el estado.");
     }
   }
 
-  function manejarEdicionGuardada(id: number, campos: UsuarioEdicion) {
+  function manejarCreacion(usuario: Usuario) {
+    setUsuarios((prev) => [...prev, usuario]);
+  }
+
+  function manejarRolGuardado(actualizado: Usuario) {
     setUsuarios((prev) =>
-      prev.map((u) =>
-        u.id_usuario === id
-          ? { ...u, ...campos, telefono: campos.telefono ?? null }
-          : u,
-      ),
+      prev.map((u) => (u.id_usuario === actualizado.id_usuario ? actualizado : u)),
     );
+  }
+
+  function manejarEliminacion(id: number) {
+    setUsuarios((prev) => prev.filter((u) => u.id_usuario !== id));
   }
 
   return (
     <div className="space-y-6">
       <SectionHeader
         title="Usuarios y roles"
-        description="El alta de usuarios se realiza únicamente desde este panel"
+        description="La gestión de usuarios se realiza únicamente desde este panel"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UsersIcon className="size-4 text-brand-600 dark:text-brand-400" />
-            Nuevo usuario
-          </CardTitle>
-          <CardDescription>
-            El usuario recibirá las credenciales definidas aquí.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={crearUsuario}>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="nu-nombre" className={labelCls}>
-                Nombre
-              </Label>
-              <Input
-                id="nu-nombre"
-                value={form.nombre}
-                onChange={(e) => cambiar("nombre", e.target.value)}
-                required
-                minLength={2}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nu-apellido" className={labelCls}>
-                Apellido
-              </Label>
-              <Input
-                id="nu-apellido"
-                value={form.apellido}
-                onChange={(e) => cambiar("apellido", e.target.value)}
-                required
-                minLength={2}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nu-correo" className={labelCls}>
-                Correo
-              </Label>
-              <Input
-                id="nu-correo"
-                type="email"
-                value={form.correo}
-                onChange={(e) => cambiar("correo", e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nu-contrasena" className={labelCls}>
-                Contraseña inicial
-              </Label>
-              <Input
-                id="nu-contrasena"
-                type="password"
-                autoComplete="new-password"
-                value={form.contrasena}
-                onChange={(e) => cambiar("contrasena", e.target.value)}
-                required
-                minLength={8}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nu-telefono" className={labelCls}>
-                Teléfono (opcional)
-              </Label>
-              <Input
-                id="nu-telefono"
-                value={form.telefono}
-                onChange={(e) => cambiar("telefono", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nu-rol" className={labelCls}>
-                Rol
-              </Label>
-              <Select
-                value={form.rol}
-                onValueChange={(v) => cambiar("rol", v ?? "")}
-              >
-                <SelectTrigger id="nu-rol" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((rol) => (
-                    <SelectItem key={rol} value={rol}>
-                      {rol === "ADMIN" ? "Administrador" : "Empleado"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="submit"
-              disabled={creando}
-              className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
-            >
-              {creando ? "Creando…" : "Crear usuario"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <div
+            key={stat.etiqueta}
+            className="rounded-xl border border-white/10 bg-card/40 p-4"
+          >
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-white/40">
+              {stat.etiqueta}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
+              <span className="bg-linear-to-br from-brand-400 to-violet-500 bg-clip-text text-transparent">
+                {stat.valor}
+              </span>
+            </p>
+          </div>
+        ))}
+      </div>
 
       <Card>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="size-4 text-brand-600 dark:text-brand-400" />
+              Usuarios registrados
+            </CardTitle>
+            <CardDescription>
+              {usuarios.length} usuario(s) en la plataforma.
+            </CardDescription>
+          </div>
+          <Button
+            onClick={() => setCrearAbierto(true)}
+            className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
+          >
+            <UserPlus className="size-4" />
+            Nuevo usuario
+          </Button>
+        </CardHeader>
+
         {cargando ? (
           <CardContent className="space-y-3 p-4">
             {[0, 1, 2, 3].map((i) => (
@@ -259,92 +194,224 @@ export function UsuariosPanel() {
           </CardContent>
         ) : (
           <>
-            <CardHeader>
-              <CardTitle>Usuarios registrados</CardTitle>
-              <CardDescription>
-                {usuarios.length} usuario(s) en la plataforma.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Correo</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Último acceso</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usuarios.map((u) => (
-                    <TableRow key={u.id_usuario}>
-                      <TableCell>
-                        <div className="flex items-center gap-2.5">
-                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
-                            {iniciales(u.nombre, u.apellido)}
-                          </span>
-                          <span>
-                            {u.nombre} {u.apellido}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{u.correo}</TableCell>
-                      <TableCell>
-                        <RolBadge rol={u.rol} />
-                      </TableCell>
-                      <TableCell>
-                        <EstadoBadge estado={u.estado} />
-                      </TableCell>
-                      <TableCell>{formatFecha(u.ultimo_acceso)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          <Select
-                            value={u.estado}
-                            onValueChange={(v) =>
-                              cambiarEstado(u.id_usuario, v as EstadoUsuario)
-                            }
-                          >
-                            <SelectTrigger className="w-28" size="sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ESTADOS.map((e) => (
-                                <SelectItem key={e} value={e}>
-                                  {e}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() =>
-                              setEditando({ abierto: true, usuario: u })
-                            }
-                            aria-label={`Editar ${u.nombre} ${u.apellido}`}
-                          >
-                            <PencilIcon className="size-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                <div className="relative w-full md:max-w-64">
+                  <span className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-white/40">
+                    <SearchIcon className="size-4" />
+                  </span>
+                  <Input
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por nombre o correo…"
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex flex-1 flex-wrap gap-2">
+                  <Select
+                    value={filtroRol}
+                    onValueChange={(v) => setFiltroRol((v as RolUsuario) ?? "TODOS")}
+                  >
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TODOS">Todos los roles</SelectItem>
+                      <SelectItem value="ADMIN">Administradores</SelectItem>
+                      <SelectItem value="EMPLEADO">Empleados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={filtroEstado}
+                    onValueChange={(v) =>
+                      setFiltroEstado((v as EstadoUsuario) ?? "TODOS")
+                    }
+                  >
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TODOS">Todos los estados</SelectItem>
+                      {ESTADOS.map((e) => (
+                        <SelectItem key={e} value={e}>
+                          {e}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {usuariosFiltrados.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <UsersIcon className="size-8 text-white/25" />
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    {usuarios.length === 0
+                      ? "No hay usuarios registrados todavía. Crea el primero desde «Nuevo usuario»."
+                      : "No hay usuarios que coincidan con la búsqueda o los filtros aplicados."}
+                  </p>
+                  {usuarios.length > 0 ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setBusqueda("");
+                        setFiltroRol("TODOS");
+                        setFiltroEstado("TODOS");
+                      }}
+                    >
+                      Limpiar filtros
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => setCrearAbierto(true)}
+                      className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
+                    >
+                      <UserPlus className="size-4" />
+                      Crear el primer usuario
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usuario</TableHead>
+                      <TableHead>Correo</TableHead>
+                      <TableHead>Teléfono</TableHead>
+                      <TableHead>Rol</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Último acceso</TableHead>
+                      <TableHead className="sticky right-0 bg-card text-right">
+                        Acciones
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {usuariosFiltrados.map((u) => {
+                      const esPropio = u.id_usuario === usuario?.id_usuario;
+                      return (
+                        <TableRow key={u.id_usuario} className="group">
+                          <TableCell>
+                            <div className="flex items-center gap-2.5">
+                              <Avatar
+                                nombre={u.nombre}
+                                apellido={u.apellido}
+                                urlImagen={u.url_imagen}
+                              />
+                              <span className="font-medium">
+                                {u.nombre} {u.apellido}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[9rem] truncate">
+                            {u.correo}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {u.telefono ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <RolBadge rol={u.rol} />
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() =>
+                                  setCambioRol({ abierto: true, usuario: u })
+                                }
+                                aria-label={`Cambiar rol de ${u.nombre} ${u.apellido}`}
+                                title="Cambiar rol"
+                              >
+                                <UserCog className="size-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={u.estado}
+                              onValueChange={(v) =>
+                                cambiarEstado(u.id_usuario, v as EstadoUsuario)
+                              }
+                              disabled={esPropio}
+                            >
+                              <SelectTrigger className="w-24" size="sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ESTADOS.map((e) => (
+                                  <SelectItem key={e} value={e}>
+                                    {e}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {esPropio
+                              ? "Ahora mismo"
+                              : formatTiempoRelativo(u.ultimo_acceso)}
+                          </TableCell>
+                          <TableCell className="sticky right-0 bg-card pr-3 group-hover:bg-muted/50">
+                            <div className="flex items-center justify-end">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() =>
+                                  setEliminando({ abierto: true, usuario: u })
+                                }
+                                disabled={esPropio}
+                                aria-label={`Eliminar ${u.nombre} ${u.apellido}`}
+                                title={
+                                  esPropio
+                                    ? "No puedes eliminar tu propio usuario."
+                                    : "Eliminar usuario"
+                                }
+                                className="text-destructive/80 hover:text-destructive"
+                              >
+                                <Trash2Icon className="size-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </>
         )}
       </Card>
 
-      <UsuarioEditFormModal
-        open={editando.abierto}
-        usuario={editando.usuario}
+      <UsuarioFormModal
+        open={crearAbierto}
+        onOpenChange={setCrearAbierto}
+        onGuardado={manejarCreacion}
+      />
+
+      <UsuarioRolModal
+        open={cambioRol.abierto}
+        usuario={cambioRol.usuario}
+        esPropio={cambioRol.usuario?.id_usuario === usuario?.id_usuario}
         onOpenChange={(abierto) =>
-          setEditando((e) => ({ ...e, abierto, usuario: abierto ? e.usuario : null }))
+          setCambioRol((c) => ({
+            abierto,
+            usuario: abierto ? c.usuario : null,
+          }))
         }
-        onSaved={manejarEdicionGuardada}
+        onGuardado={manejarRolGuardado}
+      />
+
+      <UsuarioEliminarModal
+        open={eliminando.abierto}
+        usuario={eliminando.usuario}
+        esPropio={eliminando.usuario?.id_usuario === usuario?.id_usuario}
+        onOpenChange={(abierto) =>
+          setEliminando((e) => ({
+            abierto,
+            usuario: abierto ? e.usuario : null,
+          }))
+        }
+        onEliminado={manejarEliminacion}
       />
     </div>
   );

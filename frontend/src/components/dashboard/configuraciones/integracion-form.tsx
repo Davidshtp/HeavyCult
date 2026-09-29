@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import {
   actualizarIntegracion,
+  conectarShopify,
   crearIntegracion,
   type IntegracionInput,
 } from "@/lib/dashboard-api";
@@ -27,6 +28,9 @@ interface Formulario {
   plataforma: PlataformaIntegracion;
   etiqueta: string;
   api_key: string;
+  shopify_tienda: string;
+  shopify_client_id: string;
+  shopify_client_secret: string;
 }
 
 const labelCls =
@@ -50,6 +54,9 @@ export function IntegracionFormModal({
     plataforma: "META_ADS",
     etiqueta: "",
     api_key: "",
+    shopify_tienda: "",
+    shopify_client_id: "",
+    shopify_client_secret: "",
   });
 
   useEffect(() => {
@@ -60,15 +67,51 @@ export function IntegracionFormModal({
             plataforma: conexion.plataforma,
             etiqueta: conexion.etiqueta,
             api_key: "",
+            shopify_tienda: "",
+            shopify_client_id: "",
+            shopify_client_secret: "",
           }
-        : { plataforma: "META_ADS", etiqueta: "", api_key: "" },
+        : {
+            plataforma: "META_ADS",
+            etiqueta: "",
+            api_key: "",
+            shopify_tienda: "",
+            shopify_client_id: "",
+            shopify_client_secret: "",
+          },
     );
   }, [open, conexion]);
+
+  const esShopify = form.plataforma === "SHOPIFY";
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setGuardando(true);
     try {
+      if (esShopify) {
+        try {
+          const { ok, mensaje } = await conectarShopify({
+            shop: form.shopify_tienda,
+            client_id: form.shopify_client_id,
+            client_secret: form.shopify_client_secret,
+          });
+          toast[ok ? "success" : "error"](mensaje);
+          onSaved({
+            plataforma: "SHOPIFY",
+            etiqueta: `Shopify (${form.shopify_tienda})`,
+            api_key: "",
+          });
+          onOpenChange(false);
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "No se pudo conectar con Shopify.",
+          );
+        }
+        return;
+      }
+
       const input: IntegracionInput = {
         plataforma: form.plataforma,
         etiqueta: form.etiqueta.trim(),
@@ -79,10 +122,10 @@ export function IntegracionFormModal({
           etiqueta: input.etiqueta,
           api_key: input.api_key,
         });
-        toast.success("Conexión actualizada (maquetación).");
+        toast.success("Conexión actualizada correctamente.");
       } else {
         await crearIntegracion(input);
-        toast.success("Conexión agregada (maquetación: backend pendiente).");
+        toast.success("Conexión agregada correctamente.");
       }
       onSaved(input);
       onOpenChange(false);
@@ -108,7 +151,15 @@ export function IntegracionFormModal({
             disabled={guardando}
             className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
           >
-            {guardando ? "Guardando…" : esEdicion ? "Guardar cambios" : "Agregar conexión"}
+            {guardando
+            ? esShopify
+              ? "Conectando…"
+              : "Guardando…"
+            : esEdicion
+              ? "Guardar cambios"
+              : esShopify
+                ? "Conectar con Shopify"
+                : "Agregar conexión"}
           </Button>
         </>
       }
@@ -137,41 +188,109 @@ export function IntegracionFormModal({
           </Select>
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="co-etiqueta" className={labelCls}>
-            Nombre / etiqueta
-          </Label>
-          <Input
-            id="co-etiqueta"
-            value={form.etiqueta}
-            onChange={(e) => setForm((f) => ({ ...f, etiqueta: e.target.value }))}
-            required
-            placeholder="Cuenta principal · ad account 01"
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="co-key" className={labelCls}>
-            API key
-          </Label>
-          <Input
-            id="co-key"
-            type="password"
-            autoComplete="off"
-            value={form.api_key}
-            onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
-            required={!esEdicion}
-            placeholder={esEdicion ? "Deja vacío para conservar la actual" : "sk-…"}
-          />
-          {esEdicion && (
+        {esShopify ? (
+          <div className="grid gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="co-shop-tienda" className={labelCls}>
+                Dominio de la tienda
+              </Label>
+              <Input
+                id="co-shop-tienda"
+                value={form.shopify_tienda}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, shopify_tienda: e.target.value }))
+                }
+                required
+                placeholder="heavycult.myshopify.com"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="co-shop-client-id" className={labelCls}>
+                Client ID (API key)
+              </Label>
+              <Input
+                id="co-shop-client-id"
+                value={form.shopify_client_id}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, shopify_client_id: e.target.value }))
+                }
+                required
+                placeholder="32 caracteres hexadecimales"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="co-shop-client-secret" className={labelCls}>
+                Client Secret
+              </Label>
+              <Input
+                id="co-shop-client-secret"
+                type="password"
+                autoComplete="off"
+                value={form.shopify_client_secret}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    shopify_client_secret: e.target.value,
+                  }))
+                }
+                required
+                placeholder="shpss_…"
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
-              Clave actual:{" "}
-              <span className="font-mono text-brand-300/80">
-                {conexion?.api_key_enmascarada}
-              </span>
+              Al conectar, el backend obtiene el token automáticamente (Client
+              Credentials), lo guarda cifrado junto con las credenciales de la
+              tienda y prueba la conexión. Los tokens expiran a las 24 h y se
+              renuevan solos.
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-2">
+              <Label htmlFor="co-etiqueta" className={labelCls}>
+                Nombre / etiqueta
+              </Label>
+              <Input
+                id="co-etiqueta"
+                value={form.etiqueta}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, etiqueta: e.target.value }))
+                }
+                required
+                placeholder="Cuenta principal · ad account 01"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="co-key" className={labelCls}>
+                API key
+              </Label>
+              <Input
+                id="co-key"
+                type="password"
+                autoComplete="off"
+                value={form.api_key}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, api_key: e.target.value }))
+                }
+                required={!esEdicion}
+                placeholder={
+              esEdicion
+                ? "Deja vacío para conservar la actual"
+                : "sk-…"
+            }
+              />
+              {esEdicion && (
+                <p className="text-sm text-muted-foreground">
+                  Clave actual:{" "}
+                  <span className="font-mono text-brand-300/80">
+                    {conexion?.api_key_enmascarada}
+                  </span>
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </form>
     </Modal>
   );

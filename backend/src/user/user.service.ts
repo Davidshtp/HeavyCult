@@ -75,7 +75,22 @@ export class UserService {
   ): Promise<Usuario> {
     const usuario = await this.findById(idUsuario);
     usuario.estado = estado;
+    if (estado === EstadoUsuario.ACTIVO) {
+      usuario.bloqueado_hasta = undefined;
+      usuario.intentos_fallidos = 0;
+    }
     return this.usuarioRepository.save(usuario);
+  }
+
+  async cambiarRol(idUsuario: number, rol: RolUsuario): Promise<Usuario> {
+    const usuario = await this.findById(idUsuario);
+    usuario.rol = rol;
+    return this.usuarioRepository.save(usuario);
+  }
+
+  async eliminar(idUsuario: number): Promise<void> {
+    await this.findById(idUsuario);
+    await this.usuarioRepository.softDelete({ id_usuario: idUsuario });
   }
 
   async actualizarPerfil(

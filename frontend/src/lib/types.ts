@@ -21,13 +21,14 @@ export interface LoginResponse {
   usuario: Usuario;
 }
 
-// ----- Maquetación: modelos que coincidirán con el backend futuro -----
+// Integraciones conectadas al backend; el catálogo de productos sigue en
+// maquetación hasta implementar el backend correspondiente.
 
 export type PlataformaIntegracion =
   | "META_ADS"
   | "TIKTOK"
   | "WHATSAPP"
-  | "DROPI"
+  | "SHOPIFY"
   | "SERVIENTREGA"
   | "INTER_RAPIDISIMO"
   | "COORDINADORA"
@@ -41,6 +42,9 @@ export interface Integracion {
   config: Record<string, string> | null;
   activo: boolean;
   fecha_creacion: string;
+  ultima_prueba_ok?: boolean | null;
+  mensaje_ultima_prueba?: string | null;
+  fecha_ultima_prueba?: string | null;
 }
 
 export type EstadoProducto = "ACTIVO" | "INACTIVO";

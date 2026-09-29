@@ -2,7 +2,7 @@ export const INTEGRATIONS = [
   "Meta Ads",
   "TikTok",
   "WhatsApp Business API",
-  "Dropi",
+  "Shopify",
   "Servientrega",
   "Inter Rapidísimo",
   "Coordinadora",
@@ -26,10 +26,10 @@ export const MODULES = [
   },
   {
     id: "03",
-    title: "Catálogo & Dropi Sync",
+    title: "Catálogo & Shopify Sync",
     description:
-      "Importación de productos por ID/SKU de Dropi y enriquecimiento de tallas, variantes, políticas y objeciones para la IA.",
-    tag: "sync: dropi",
+      "Importación de productos desde la tienda Shopify y enriquecimiento de tallas, variantes, políticas y objeciones para la IA.",
+    tag: "sync: shopify",
   },
   {
     id: "04",
@@ -42,7 +42,7 @@ export const MODULES = [
     id: "05",
     title: "Analítica & Finanzas",
     description:
-      "CPA real cruzado con tasa de entrega efectiva y cálculo automático del margen neto por orden: venta, inversión, Dropi y flete.",
+      "CPA real cruzado con tasa de entrega efectiva y cálculo automático del margen neto por orden: venta, inversión, Shopify y flete.",
     tag: "bi: margen real",
   },
 ];

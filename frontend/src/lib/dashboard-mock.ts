@@ -1,10 +1,10 @@
-import type { DropiProducto, Integracion, PlataformaIntegracion, Producto } from "@/lib/types";
+import type { DropiProducto, PlataformaIntegracion, Producto } from "@/lib/types";
 
 export const PLATAFORMA_INTEGRACION_LABEL: Record<PlataformaIntegracion, string> = {
   META_ADS: "Meta Ads",
   TIKTOK: "TikTok",
   WHATSAPP: "WhatsApp Business",
-  DROPI: "Dropi",
+  SHOPIFY: "Shopify",
   SERVIENTREGA: "Servientrega",
   INTER_RAPIDISIMO: "Inter Rapidísimo",
   COORDINADORA: "Coordinadora",
@@ -14,60 +14,6 @@ export const PLATAFORMA_INTEGRACION_LABEL: Record<PlataformaIntegracion, string>
 export const PLATAFORMA_INTEGRACION_OPCIONES = Object.entries(
   PLATAFORMA_INTEGRACION_LABEL,
 ) as [PlataformaIntegracion, string][];
-
-export function enmascararApiKey(clave: string): string {
-  if (!clave) return "Sin clave";
-  if (clave.length <= 8) return "•".repeat(clave.length);
-  return `••••••••${clave.slice(-4)}`;
-}
-
-export const MOCK_INTEGRACIONES: Integracion[] = [
-  {
-    id_integracion: 1,
-    plataforma: "META_ADS",
-    etiqueta: "Cuenta principal · Pixel HC",
-    api_key_enmascarada: "••••••••9f3K",
-    config: { id_cuenta: "act_2910483721", pixel: "8491023" },
-    activo: true,
-    fecha_creacion: "2026-01-14T09:30:00.000Z",
-  },
-  {
-    id_integracion: 2,
-    plataforma: "DROPI",
-    etiqueta: "Tienda principal",
-    api_key_enmascarada: "••••••••c71X",
-    config: { tienda: "heavycult-oficial" },
-    activo: true,
-    fecha_creacion: "2026-02-02T14:05:00.000Z",
-  },
-  {
-    id_integracion: 3,
-    plataforma: "TIKTOK",
-    etiqueta: "Cuenta TTS · @heavy.cult",
-    api_key_enmascarada: "••••••••4b2Q",
-    config: { id_anunciante: "7264839201" },
-    activo: false,
-    fecha_creacion: "2026-02-21T11:18:00.000Z",
-  },
-  {
-    id_integracion: 4,
-    plataforma: "WHATSAPP",
-    etiqueta: "API WhatsApp · número ventas",
-    api_key_enmascarada: "••••••••1d8P",
-    config: { numero: "573001234567" },
-    activo: true,
-    fecha_creacion: "2026-03-10T16:40:00.000Z",
-  },
-  {
-    id_integracion: 5,
-    plataforma: "INTER_RAPIDISIMO",
-    etiqueta: "Flete nacional",
-    api_key_enmascarada: "••••••••7a2N",
-    config: { usuario: "HC_VENTAS" },
-    activo: true,
-    fecha_creacion: "2026-04-05T08:12:00.000Z",
-  },
-];
 
 export const MOCK_PRODUCTOS: Producto[] = [
   {

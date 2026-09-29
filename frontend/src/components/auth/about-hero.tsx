@@ -13,7 +13,7 @@ export function AboutHero() {
         HeavyCult ERP centraliza, automatiza y escala operaciones de comercio
         electrónico y dropshipping con pago contra entrega. En un solo panel de
         control: publicidad multicanal, atención al cliente impulsada por IA,
-        gestión logística con Dropi y analítica financiera en tiempo real.
+        gestión de tienda con Shopify y analítica financiera en tiempo real.
       </p>
       <ul className="mt-7 flex max-w-3xl flex-wrap items-center justify-center gap-2">
         {INTEGRATIONS.map((i) => (

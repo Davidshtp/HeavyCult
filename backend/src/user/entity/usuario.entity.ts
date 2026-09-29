@@ -2,6 +2,7 @@ import { Exclude } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -80,6 +81,13 @@ export class Usuario {
 
   @Column({ type: 'timestamp', nullable: true, name: 'bloqueado_hasta' })
   bloqueado_hasta?: Date;
+
+  @DeleteDateColumn({
+    type: 'timestamp',
+    nullable: true,
+    name: 'deleted_at',
+  })
+  deleted_at?: Date | null;
 
   @OneToMany(() => Token, (token) => token.usuario)
   tokens: Token[];

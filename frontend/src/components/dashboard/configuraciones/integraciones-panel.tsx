@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   FilmIcon,
+  Loader2Icon,
   MegaphoneIcon,
   MessageCircleIcon,
-  PackageIcon,
   PencilIcon,
   PlugIcon,
   PlusIcon,
+  StoreIcon,
   Trash2Icon,
   TruckIcon,
   type LucideIcon,
@@ -36,7 +37,7 @@ const ICONOS_PLATAFORMA: Record<PlataformaIntegracion, LucideIcon> = {
   META_ADS: MegaphoneIcon,
   TIKTOK: FilmIcon,
   WHATSAPP: MessageCircleIcon,
-  DROPI: PackageIcon,
+  SHOPIFY: StoreIcon,
   SERVIENTREGA: TruckIcon,
   INTER_RAPIDISIMO: TruckIcon,
   COORDINADORA: TruckIcon,
@@ -46,6 +47,7 @@ const ICONOS_PLATAFORMA: Record<PlataformaIntegracion, LucideIcon> = {
 export function IntegracionesPanel() {
   const [conexiones, setConexiones] = useState<Integracion[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [probando, setProbando] = useState<number | null>(null);
   const [modal, setModal] = useState<{ abierto: boolean; conexion: Integracion | null }>({
     abierto: false,
     conexion: null,
@@ -56,13 +58,7 @@ export function IntegracionesPanel() {
   }
 
   useEffect(() => {
-    (async () => {
-      try {
-        await recargar();
-      } finally {
-        setCargando(false);
-      }
-    })();
+    recargar().finally(() => setCargando(false));
   }, []);
 
   async function manejarActivo(conexion: Integracion) {
@@ -75,11 +71,26 @@ export function IntegracionesPanel() {
   }
 
   async function manejarProbar(conexion: Integracion) {
-    const ok = await probarConexionIntegracion(conexion.id_integracion);
-    if (ok) {
-      toast.success("Conexión verificada correctamente (maquetación).");
-    } else {
-      toast.error("La conexión no respondió: revisa la clave (maquetación).");
+    setProbando(conexion.id_integracion);
+    try {
+      const { ok, mensaje } = await probarConexionIntegracion(
+        conexion.id_integracion,
+      );
+      if (ok) {
+        toast.success(mensaje);
+      } else {
+        toast.error(mensaje);
+      }
+      await recargar();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No se pudo probar la conexión.",
+      );
+      await recargar();
+    } finally {
+      setProbando(null);
     }
   }
 
@@ -95,7 +106,7 @@ export function IntegracionesPanel() {
     setConexiones((prev) =>
       prev.filter((c) => c.id_integracion !== conexion.id_integracion),
     );
-    toast.success("Conexión eliminada (maquetación).");
+    toast.success("Conexión eliminada.");
   }
 
   async function manejarGuardado() {
@@ -124,14 +135,6 @@ export function IntegracionesPanel() {
             <Skeleton key={i} className="h-52 rounded-xl" />
           ))}
         </div>
-      ) : conexiones.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-base text-muted-foreground">
-              Aún no hay conexiones configuradas.
-            </p>
-          </CardContent>
-        </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {conexiones.map((conexion) => {
@@ -169,6 +172,27 @@ export function IntegracionesPanel() {
                     <p className="mt-1 text-[0.8rem] text-muted-foreground">
                       Conectada el {formatFecha(conexion.fecha_creacion)}
                     </p>
+                    <p
+                      className="mt-1 text-[0.8rem]"
+                      title={conexion.ultima_prueba_ok ? undefined : (conexion.mensaje_ultima_prueba ?? undefined)}
+                    >
+                      {conexion.ultima_prueba_ok === null ||
+                      conexion.ultima_prueba_ok === undefined ? (
+                        <span className="text-muted-foreground">Sin probar</span>
+                      ) : conexion.ultima_prueba_ok ? (
+                        <span className="text-emerald-400">
+                          Última prueba: verificada
+                        </span>
+                      ) : (
+                        <span className="text-rose-400">Última prueba: fallida</span>
+                      )}
+                      {conexion.fecha_ultima_prueba ? (
+                        <span className="text-muted-foreground">
+                          {" · "}
+                          {formatFecha(conexion.fecha_ultima_prueba)}
+                        </span>
+                      ) : null}
+                    </p>
                   </div>
 
                   <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
@@ -176,9 +200,14 @@ export function IntegracionesPanel() {
                       variant="outline"
                       size="sm"
                       onClick={() => manejarProbar(conexion)}
+                      disabled={probando === conexion.id_integracion}
                     >
-                      <PlugIcon className="size-3.5" />
-                      Probar
+                      {probando === conexion.id_integracion ? (
+                        <Loader2Icon className="size-3.5 animate-spin" />
+                      ) : (
+                        <PlugIcon className="size-3.5" />
+                      )}
+                      {probando === conexion.id_integracion ? "Probando…" : "Probar"}
                     </Button>
                     <Button
                       variant="outline"

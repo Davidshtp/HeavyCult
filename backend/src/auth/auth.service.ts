@@ -83,12 +83,19 @@ export class AuthService {
   }
 
   private mensajeBloqueo(usuario: Usuario): string {
-    const minutosRestantes = usuario.bloqueado_hasta
-      ? Math.ceil((usuario.bloqueado_hasta.getTime() - Date.now()) / 60000)
-      : 0;
-    const minutos = Math.max(minutosRestantes, 0);
-    const unidad = `minuto${minutos === 1 ? '' : 's'}`;
-    return `Cuenta bloqueada temporalmente por múltiples intentos fallidos. Inténtalo en ${minutos} ${unidad}.`;
+    const bloqueoActivo =
+      usuario.bloqueado_hasta && usuario.bloqueado_hasta > new Date();
+
+    if (bloqueoActivo && usuario.bloqueado_hasta) {
+      const minutos = Math.max(
+        Math.ceil((usuario.bloqueado_hasta.getTime() - Date.now()) / 60000),
+        0,
+      );
+      const unidad = `minuto${minutos === 1 ? '' : 's'}`;
+      return `Cuenta bloqueada temporalmente por múltiples intentos fallidos. Inténtalo en ${minutos} ${unidad}.`;
+    }
+
+    return 'Tu cuenta fue bloqueada por un administrador. Si crees que es un error, contacta a soporte.';
   }
 
   firmarToken(usuario: Usuario): string {

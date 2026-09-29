@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { AppController } from './app.controller';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { IntegracionModule } from './integracion/integracion.module';
+import { ShopifyModule } from './shopify/shopify.module';
 import {
   DB_DATABASE,
   DB_HOST,
@@ -31,6 +34,8 @@ import { UserModule } from './user/user.module';
       throttlers: [{ ttl: 60_000, limit: 100 }],
     }),
 
+    ScheduleModule.forRoot(),
+
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -53,6 +58,8 @@ import { UserModule } from './user/user.module';
     MailModule,
     CloudinaryModule,
     AuthModule,
+    IntegracionModule,
+    ShopifyModule,
   ],
   controllers: [AppController],
   providers: [
