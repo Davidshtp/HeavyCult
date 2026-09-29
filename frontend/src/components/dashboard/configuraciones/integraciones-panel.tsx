@@ -244,6 +244,7 @@ export function IntegracionesPanel() {
       <IntegracionFormModal
         open={modal.abierto}
         conexion={modal.conexion}
+        plataformasConectadas={conexiones.map((c) => c.plataforma)}
         onOpenChange={(abierto) =>
           setModal((m) => ({ ...m, abierto, conexion: abierto ? m.conexion : null }))
         }

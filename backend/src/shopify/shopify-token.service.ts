@@ -8,7 +8,10 @@ import {
   Integracion,
   PlataformaIntegracion,
 } from '../integracion/entity/integracion.entity';
-import { cifrarApiKey } from '../integracion/util/cifrador-api-key';
+import {
+  cifrarApiKey,
+  descifrarApiKey,
+} from '../integracion/util/cifrador-api-key';
 import { ShopifyAuthService } from './shopify-auth.service';
 
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
@@ -57,11 +60,14 @@ export class ShopifyTokenService implements OnModuleInit {
     const config = integracion.config;
     if (!config) return null;
 
+    const clientSecret = this.obtenerClientSecret(config);
+    if (!clientSecret) return null;
+
     try {
       const credenciales = await this.authService.obtenerTokenClientCredentials(
         config['shop'],
         config['client_id'],
-        config['client_secret'],
+        clientSecret,
       );
       const secreto = this.configService.get<string>(JWT_SECRET) ?? '';
       const ahora = new Date();
@@ -76,6 +82,9 @@ export class ShopifyTokenService implements OnModuleInit {
       );
       integracion.config = {
         ...config,
+        client_secret: config['client_secret'].startsWith('aesgcm.')
+          ? config['client_secret']
+          : cifrarApiKey(secreto, clientSecret),
         token_obtenido_en: ahora.toISOString(),
         token_expira_en: new Date(ahora.getTime() + expiraEn).toISOString(),
       };
@@ -89,6 +98,19 @@ export class ShopifyTokenService implements OnModuleInit {
         `No se pudo renovar el token de Shopify (${config['shop']}).`,
         error instanceof Error ? error.stack : undefined,
       );
+      return null;
+    }
+  }
+
+  private obtenerClientSecret(config: Record<string, string>): string | null {
+    const guardado = config['client_secret'];
+    if (!guardado) return null;
+    if (!guardado.startsWith('aesgcm.')) return guardado;
+    const secreto = this.configService.get<string>(JWT_SECRET) ?? '';
+    if (!secreto) return null;
+    try {
+      return descifrarApiKey(secreto, guardado);
+    } catch {
       return null;
     }
   }

@@ -39,11 +39,13 @@ const labelCls =
 export function IntegracionFormModal({
   open,
   conexion,
+  plataformasConectadas = [],
   onOpenChange,
   onSaved,
 }: {
   open: boolean;
   conexion: Integracion | null;
+  plataformasConectadas?: PlataformaIntegracion[];
   onOpenChange: (abierto: boolean) => void;
   onSaved: (input: IntegracionInput) => void;
 }) {
@@ -59,6 +61,12 @@ export function IntegracionFormModal({
     shopify_client_secret: "",
   });
 
+  const plataformasDisponibles = esEdicion
+    ? PLATAFORMA_INTEGRACION_OPCIONES
+    : PLATAFORMA_INTEGRACION_OPCIONES.filter(
+        ([valor]) => !plataformasConectadas.includes(valor),
+      );
+
   useEffect(() => {
     if (!open) return;
     setForm(
@@ -72,7 +80,7 @@ export function IntegracionFormModal({
             shopify_client_secret: "",
           }
         : {
-            plataforma: "META_ADS",
+            plataforma: plataformasDisponibles[0]?.[0] ?? "META_ADS",
             etiqueta: "",
             api_key: "",
             shopify_tienda: "",
@@ -80,7 +88,7 @@ export function IntegracionFormModal({
             shopify_client_secret: "",
           },
     );
-  }, [open, conexion]);
+  }, [open, conexion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const esShopify = form.plataforma === "SHOPIFY";
 
@@ -148,7 +156,7 @@ export function IntegracionFormModal({
           <Button
             type="submit"
             form={formId}
-            disabled={guardando}
+            disabled={guardando || (!esEdicion && plataformasDisponibles.length === 0)}
             className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
           >
             {guardando
@@ -166,26 +174,34 @@ export function IntegracionFormModal({
     >
       <form id={formId} onSubmit={enviar} className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="co-plataforma" className={labelCls}>
-            Plataforma
-          </Label>
-          <Select
-            value={form.plataforma}
-            onValueChange={(v) =>
-              setForm((f) => ({ ...f, plataforma: v as PlataformaIntegracion }))
-            }
-          >
-            <SelectTrigger id="co-plataforma" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PLATAFORMA_INTEGRACION_OPCIONES.map(([valor, etiqueta]) => (
-                <SelectItem key={valor} value={valor}>
-                  {etiqueta}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!esEdicion && plataformasDisponibles.length === 0 ? (
+            <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-4 text-sm text-muted-foreground">
+              Ya tienes conexiones para todas las plataformas disponibles.
+            </p>
+          ) : (
+            <>
+              <Label htmlFor="co-plataforma" className={labelCls}>
+                Plataforma
+              </Label>
+              <Select
+                value={form.plataforma}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, plataforma: v as PlataformaIntegracion }))
+                }
+              >
+                <SelectTrigger id="co-plataforma" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {plataformasDisponibles.map(([valor, etiqueta]) => (
+                    <SelectItem key={valor} value={valor}>
+                      {etiqueta}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </div>
 
         {esShopify ? (

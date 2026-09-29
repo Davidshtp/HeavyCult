@@ -76,7 +76,7 @@ export class ShopifyController {
         config: {
           shop: shopHost,
           client_id: dto.client_id,
-          client_secret: dto.client_secret,
+          client_secret: cifrarApiKey(secreto, dto.client_secret),
           token_obtenido_en: ahora.toISOString(),
           token_expira_en: new Date(ahora.getTime() + expiraEn).toISOString(),
         },
