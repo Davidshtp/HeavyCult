@@ -146,18 +146,6 @@
       margin-top: 4px;
     }
 
-    details.advanced {
-      margin-bottom: 12px;
-    }
-
-    details.advanced summary {
-      cursor: pointer;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 12px;
-      margin-bottom: 8px;
-    }
-
     .status {
       margin: 0 16px 14px;
       padding: 10px 12px;
@@ -253,7 +241,7 @@
         <input id="client-secret" type="password" placeholder="shpss_…" spellcheck="false" autocomplete="off" />
         <button type="button" id="toggle-secret" class="ghost" title="Mostrar/ocultar">&#128065;</button>
       </div>
-      <small>Mismos datos que Configuración → Conexiones. El token se obtiene automáticamente (Client Credentials) y se renueva solo.</small>
+      <small>Mismos datos que Configuración → Conexiones. El token se obtiene automáticamente (Client Credentials) y se renueva solo. Usa la versión 2026-07 de la API.</small>
     </label>
 
     <label>
@@ -265,20 +253,6 @@
       <select id="location-picker" class="hidden" aria-label="Ubicaciones encontradas"></select>
       <small>Ver Ubicaciones → usa el número final de la URL. O pulsa «Listar» (requiere el scope read_locations).</small>
     </label>
-
-    <details class="advanced">
-      <summary>Avanzado</summary>
-      <label>
-        Versión de API
-        <select id="api-version">
-          <option value="2025-10">2025-10</option>
-          <option value="2026-01">2026-01</option>
-          <option value="2026-04">2026-04</option>
-          <option value="2026-07" selected>2026-07 (recomendada)</option>
-        </select>
-        <small>Nuevo modelo de productos: productCreate + productVariantsBulkCreate.</small>
-      </label>
-    </details>
 
     <div class="actions">
       <button type="submit" id="save-btn" class="secondary">Guardar</button>

@@ -13,7 +13,6 @@
   const STORAGE_KEY = "dropiImporterConfig";
   const DROPI_HOST = "app.dropi.co";
   const PRODUCT_DETAILS_PATH_RE = /\/(?:dashboard\/product-details|producto|product-detail)\//;
-  const NEW_MODEL_VERSIONS = ["2025-10", "2026-01", "2026-04", "2026-07"];
 
   const SCOPES_REQUERIDOS_IMPORTACION = ["write_products", "write_inventory"];
   const SCOPES_RECOMENDADOS = ["read_inventory", "read_locations"];
@@ -23,7 +22,6 @@
     clientId: document.getElementById("client-id"),
     clientSecret: document.getElementById("client-secret"),
     locationId: document.getElementById("location-id"),
-    apiVersion: document.getElementById("api-version"),
     saveBtn: document.getElementById("save-btn"),
     testBtn: document.getElementById("test-btn"),
     importBtn: document.getElementById("import-btn"),
@@ -44,7 +42,6 @@
     clientId: els.clientId.value.trim(),
     clientSecret: els.clientSecret.value.trim(),
     locationId: els.locationId.value.trim(),
-    apiVersion: els.apiVersion.value,
   });
 
   const validateConfig = (config, { requiereUbicacion = false } = {}) => {
@@ -67,8 +64,6 @@
         errors.push("El Location ID debe ser el número de la URL (ej: 123456) u un gid://shopify/Location/….");
     }
 
-    if (!/^\d{4}-\d{2}$/.test(config.apiVersion || "")) errors.push("Versión de API inválida (formato YYYY-MM).");
-
     return errors.map((message) => ({ message }));
   };
 
@@ -84,12 +79,13 @@
       if (typeof saved.clientId === "string") els.clientId.value = saved.clientId;
       if (typeof saved.clientSecret === "string") els.clientSecret.value = saved.clientSecret;
       if (typeof saved.locationId === "string") els.locationId.value = saved.locationId;
-      if (NEW_MODEL_VERSIONS.includes(saved.apiVersion)) els.apiVersion.value = saved.apiVersion;
 
-      // Migración: la versión anterior guardaba un token estático (apiToken).
-      // Inútil para este flujo: se descarta para no confundir configuración vieja.
-      if (saved.apiToken) {
+      // Migración: la versión de API era configurable y ya no lo es (ahora es
+      // fija en el service worker), y la versión anterior guardaba un token
+      // estático inútil para este flujo. Se descartan para no confundir.
+      if (saved.apiVersion || saved.apiToken) {
         const limpiado = { ...saved };
+        delete limpiado.apiVersion;
         delete limpiado.apiToken;
         await chrome.storage.local.set({ [STORAGE_KEY]: limpiado });
       }

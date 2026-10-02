@@ -42,7 +42,13 @@ const ALARM_PERIODO_MIN = 30;
 const STORAGE_CONFIG = "dropiImporterConfig";
 const STORAGE_TOKEN = "dropiTokenCache";
 
-const NEW_MODEL_MIN_VERSION = 202501; // 2025-01
+/**
+ * Versión de la Admin API que usa toda la extensión. Fija a propósito: el
+ * popup no la expone porque cambiarla requiere adaptar el flujo a las
+ * diferencias del modelo de productos, no solo la URL.
+ */
+const API_VERSION = "2026-07";
+
 const LOCATION_GID_RE = /^gid:\/\/shopify\/Location\/\d+$/;
 
 const MAX_OPCIONES_SHOPIFY = 3;
@@ -306,11 +312,6 @@ const leerConfigGuardada = async () => {
   }
 };
 
-const versionToNumber = (version) => {
-  const match = String(version || "").match(/^(\d{4})-(\d{2})$/);
-  return match ? Number(match[1]) * 100 + Number(match[2]) : null;
-};
-
 /** Acepta "123456", "Location/123456" o un gid completo. => gid. */
 const toLocationGid = (value) => {
   const text = String(value || "").trim();
@@ -334,10 +335,7 @@ const validateConfig = (config) => {
   const clientSecret = String(config.clientSecret || "").trim();
   if (!clientSecret) errors.push("Falta el Client Secret.");
 
-  const apiVersion = String(config.apiVersion || "").trim();
-  if (!/^\d{4}-\d{2}$/.test(apiVersion)) errors.push("Versión de API inválida (formato YYYY-MM).");
-
-  return { errors, shopDomain, clientId, clientSecret, apiVersion };
+  return { errors, shopDomain, clientId, clientSecret, apiVersion: API_VERSION };
 };
 
 /** Precio utilizable como número positivo. null/""/undefined se normalizan a 0. */
@@ -552,7 +550,7 @@ const scopeActual = async (config) => {
  * --------------------------------------------------------------------- */
 
 const probarConexionConShop = async (token, shop) => {
-  const url = `https://${shop}/admin/api/2024-01/shop.json`;
+  const url = `https://${shop}/admin/api/${API_VERSION}/shop.json`;
   const respuesta = await peticionTimeout(url, {
     headers: { "X-Shopify-Access-Token": token, Accept: "application/json" },
   });
@@ -707,17 +705,6 @@ mutation VariantUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!)
 `;
 
 const INVENTORY_SET_QUANTITIES_QUERY = `
-mutation InventorySet($input: InventorySetQuantitiesInput!) {
-  inventorySetQuantities(input: $input) {
-    userErrors {
-      field
-      message
-    }
-  }
-}
-`;
-
-const INVENTORY_SET_QUANTITIES_QUERY_IDEMPOTENT = `
 mutation InventorySet($input: InventorySetQuantitiesInput!, $idempotencyKey: String!) {
   inventorySetQuantities(input: $input) @idempotent(key: $idempotencyKey) {
     userErrors {
@@ -729,8 +716,6 @@ mutation InventorySet($input: InventorySetQuantitiesInput!, $idempotencyKey: Str
 `;
 
 const RAZON_CORRECCION_INVENTARIO = "correction";
-const IDEMPOTENCIA_MIN_VERSION = 202604; // @idempotent obligatorio desde 2026-04
-const CHANGE_FROM_QUANTITY_MIN_VERSION = 202607; // campo obligatorio desde 2026-07
 
 const generarIdempotencyKey = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -1291,27 +1276,29 @@ const ejecutarVariantsBulkUpdate = async (config, token, productId, product, var
 };
 
 const ejecutarSetInventario = async (config, token, inventoryItemGid, locationGid, stock) => {
-  const version = versionToNumber(config.apiVersion);
-  const conIdempotencia = version != null && version >= IDEMPOTENCIA_MIN_VERSION;
-  const conChangeFromQuantity = version != null && version >= CHANGE_FROM_QUANTITY_MIN_VERSION;
-
-  const cantidad = { inventoryItemId: inventoryItemGid, locationId: locationGid, quantity: stock };
-  if (conChangeFromQuantity) cantidad.changeFromQuantity = null;
-
+  // En 2026-07 la idempotencyKey y changeFromQuantity son obligatorios: siempre se
+  // envían, por eso no hace falta decidirlo según la versión.
   const variables = {
     input: {
       name: "available",
       reason: RAZON_CORRECCION_INVENTARIO,
-      quantities: [cantidad],
+      quantities: [
+        {
+          inventoryItemId: inventoryItemGid,
+          locationId: locationGid,
+          quantity: stock,
+          changeFromQuantity: null,
+        },
+      ],
     },
+    idempotencyKey: generarIdempotencyKey(),
   };
-  if (conIdempotencia) variables.idempotencyKey = generarIdempotencyKey();
 
   const json = await postGraphql({
     shopDomain: config.shopDomain,
     apiToken: token,
     apiVersion: config.apiVersion,
-    query: conIdempotencia ? INVENTORY_SET_QUANTITIES_QUERY_IDEMPOTENT : INVENTORY_SET_QUANTITIES_QUERY,
+    query: INVENTORY_SET_QUANTITIES_QUERY,
     variables,
   });
 
@@ -1534,18 +1521,6 @@ const runImport = async (config = {}, product = null) => {
   const locationGid = toLocationGid(config.locationId);
   if (!locationGid)
     return { ok: false, stage: "validacion", errors: ["Falta un Location ID válido (número o gid://shopify/Location/…)."] };
-
-  const version = versionToNumber(check.apiVersion);
-  if (version != null && version < NEW_MODEL_MIN_VERSION) {
-    return {
-      ok: false,
-      stage: "validacion",
-      errors: [
-        `La versión ${check.apiVersion} es anterior a 2025-01. Este flujo usa el nuevo modelo de ` +
-          "productos (productCreate + productVariantsBulkUpdate); usa al menos 2025-01 (recomendado 2026-07).",
-      ],
-    };
-  }
 
   const tags = buildTags(product);
 
