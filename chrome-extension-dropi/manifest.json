@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Dropi → Shopify Importer",
+  "version": "1.3.0",
+  "description": "Scraper e importador de productos desde la vista detallada de Dropi hacia Shopify vía GraphQL Admin API. Detecta SKU ya importados, deduce los nombres de las opciones y revierte la creación si algo falla.",
+  "permissions": ["storage", "tabs", "scripting", "activeTab", "alarms"],
+  "host_permissions": [
+    "https://app.dropi.co/*",
+    "https://*.myshopify.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Dropi → Shopify Importer"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://app.dropi.co/*"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

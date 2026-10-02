@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dropi → Shopify</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text: #202223;
+      --muted: #6e7175;
+      --primary: #008060;
+      --primary-hover: #006e52;
+      --border: #c9cccf;
+      --error: #d9482b;
+      --success: #007f5f;
+      --warning: #8a5a00;
+      --warning-bg: #fdf3e2;
+      --warning-border: #e8d3a6;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+
+    h1 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    form {
+      padding: 12px 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    label small {
+      display: block;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    input,
+    select {
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid rgba(0, 128, 96, 0.25);
+      border-color: var(--primary);
+    }
+
+    .token-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .token-row input {
+      flex: 1;
+      margin-top: 4px;
+    }
+
+    select.hidden {
+      display: none;
+    }
+
+    button {
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      margin-top: 4px;
+      padding: 5px 8px;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: #ffffff;
+      flex: 1;
+    }
+
+    button.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    button.secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    details.advanced {
+      margin-bottom: 12px;
+    }
+
+    details.advanced summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .status {
+      margin: 0 16px 14px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .status.loading {
+      display: block;
+      background: #e7f1e9;
+      color: #006e52;
+      border: 1px solid #bbdcc4;
+    }
+
+    .status.error {
+      display: block;
+      background: #fdeeea;
+      color: var(--error);
+      border: 1px solid #f0c2b4;
+    }
+
+    .status.success {
+      display: block;
+      background: #e7f1e9;
+      color: var(--success);
+      border: 1px solid #bbdcc4;
+    }
+
+    .status.warning {
+      display: block;
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
+    }
+
+    .status a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .status .detail {
+      display: block;
+      margin-top: 6px;
+      color: var(--text);
+    }
+
+    .status .detail ul {
+      padding-left: 16px;
+      margin-top: 4px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(0, 110, 82, 0.3);
+      border-top-color: #006e52;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: -1px;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dropi → Shopify</h1>
+    <p class="subtitle">Importa el producto activo de Dropi a tu tienda.</p>
+  </header>
+
+  <form id="config-form" autocomplete="off">
+    <label>
+      Shopify Shop Domain
+      <input id="shop-domain" type="text" placeholder="tu-tienda.myshopify.com" spellcheck="false" />
+    </label>
+
+    <label>
+      Client ID (API key de tu app)
+      <input id="client-id" type="text" placeholder="ea94a13e3e96b1b6eb93d2fd04c20f6a" spellcheck="false" autocomplete="off" />
+    </label>
+
+    <label>
+      Client Secret de tu app
+      <div class="token-row">
+        <input id="client-secret" type="password" placeholder="shpss_…" spellcheck="false" autocomplete="off" />
+        <button type="button" id="toggle-secret" class="ghost" title="Mostrar/ocultar">&#128065;</button>
+      </div>
+      <small>Mismos datos que Configuración → Conexiones. El token se obtiene automáticamente (Client Credentials) y se renueva solo.</small>
+    </label>
+
+    <label>
+      Location ID (Ubicación de Shopify)
+      <div class="token-row">
+        <input id="location-id" type="text" placeholder="123456789" spellcheck="false" />
+        <button type="button" id="list-locations-btn" class="ghost" title="Buscar ubicaciones con la API de Shopify">Listar</button>
+      </div>
+      <select id="location-picker" class="hidden" aria-label="Ubicaciones encontradas"></select>
+      <small>Ver Ubicaciones → usa el número final de la URL. O pulsa «Listar» (requiere el scope read_locations).</small>
+    </label>
+
+    <details class="advanced">
+      <summary>Avanzado</summary>
+      <label>
+        Versión de API
+        <select id="api-version">
+          <option value="2025-10">2025-10</option>
+          <option value="2026-01">2026-01</option>
+          <option value="2026-04">2026-04</option>
+          <option value="2026-07" selected>2026-07 (recomendada)</option>
+        </select>
+        <small>Nuevo modelo de productos: productCreate + productVariantsBulkCreate.</small>
+      </label>
+    </details>
+
+    <div class="actions">
+      <button type="submit" id="save-btn" class="secondary">Guardar</button>
+      <button type="button" id="test-btn" class="secondary">Probar conexión</button>
+    </div>
+    <div class="actions">
+      <button type="button" id="import-btn" class="primary">Importar a Shopify</button>
+    </div>
+  </form>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
