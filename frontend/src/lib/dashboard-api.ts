@@ -9,6 +9,8 @@
 //   - PATCH  /integraciones/:id      → actualizarIntegracion (solo admin)
 //   - DELETE /integraciones/:id      → eliminarIntegracion (solo admin)
 //   - POST   /integraciones/:id/probar → probarConexionIntegracion (solo admin)
+//   - POST   /auth/shopify/conectar   → conectarShopify (solo admin)
+//   - POST   /auth/meta/conectar      → conectarMetaAds (solo admin)
 // Pendiente de conectar (backends aún no implementados):
 //   - CRUD   /productos                 → catálogo de productos
 import { apiRequest } from "@/lib/api";
@@ -191,6 +193,27 @@ export async function conectarShopify(
   input: ConectarShopifyInput,
 ): Promise<ConectarShopifyResultado> {
   return apiRequest<ConectarShopifyResultado>("/auth/shopify/conectar", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export interface ConectarMetaAdsInput {
+  app_id: string;
+  app_secret: string;
+  access_token: string;
+  ad_account_id: string;
+}
+
+export interface ConectarMetaAdsResultado {
+  ok: boolean;
+  mensaje: string;
+}
+
+export async function conectarMetaAds(
+  input: ConectarMetaAdsInput,
+): Promise<ConectarMetaAdsResultado> {
+  return apiRequest<ConectarMetaAdsResultado>("/auth/meta/conectar", {
     method: "POST",
     body: JSON.stringify(input),
   });

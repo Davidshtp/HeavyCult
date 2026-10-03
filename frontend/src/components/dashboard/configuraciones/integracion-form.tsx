@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import {
   actualizarIntegracion,
+  conectarMetaAds,
   conectarShopify,
   crearIntegracion,
   type IntegracionInput,
@@ -12,6 +13,7 @@ import {
   PLATAFORMA_INTEGRACION_OPCIONES,
 } from "@/lib/dashboard-mock";
 import type { Integracion, PlataformaIntegracion } from "@/lib/types";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +33,24 @@ interface Formulario {
   shopify_tienda: string;
   shopify_client_id: string;
   shopify_client_secret: string;
+  meta_app_id: string;
+  meta_app_secret: string;
+  meta_access_token: string;
+  meta_ad_account_id: string;
 }
+
+const FORMULARIO_VACIO: Formulario = {
+  plataforma: "META_ADS",
+  etiqueta: "",
+  api_key: "",
+  shopify_tienda: "",
+  shopify_client_id: "",
+  shopify_client_secret: "",
+  meta_app_id: "",
+  meta_app_secret: "",
+  meta_access_token: "",
+  meta_ad_account_id: "",
+};
 
 const labelCls =
   "text-[0.8rem] font-semibold tracking-[0.18em] text-muted-foreground uppercase";
@@ -52,14 +71,7 @@ export function IntegracionFormModal({
   const esEdicion = conexion !== null;
   const formId = useId();
   const [guardando, setGuardando] = useState(false);
-  const [form, setForm] = useState<Formulario>({
-    plataforma: "META_ADS",
-    etiqueta: "",
-    api_key: "",
-    shopify_tienda: "",
-    shopify_client_id: "",
-    shopify_client_secret: "",
-  });
+  const [form, setForm] = useState<Formulario>(FORMULARIO_VACIO);
 
   const plataformasDisponibles = esEdicion
     ? PLATAFORMA_INTEGRACION_OPCIONES
@@ -69,28 +81,21 @@ export function IntegracionFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm(
-      conexion
-        ? {
-            plataforma: conexion.plataforma,
-            etiqueta: conexion.etiqueta,
-            api_key: "",
-            shopify_tienda: "",
-            shopify_client_id: "",
-            shopify_client_secret: "",
-          }
-        : {
-            plataforma: plataformasDisponibles[0]?.[0] ?? "META_ADS",
-            etiqueta: "",
-            api_key: "",
-            shopify_tienda: "",
-            shopify_client_id: "",
-            shopify_client_secret: "",
-          },
-    );
+    setForm({
+      ...FORMULARIO_VACIO,
+      // El App ID y la cuenta de anuncios no son secretos, así que se pueden
+      // rehidratar al editar. Los otros dos nunca se devuelven al cliente.
+      meta_app_id: conexion?.config?.app_id ?? "",
+      meta_ad_account_id: conexion?.config?.ad_account_id ?? "",
+      ...(conexion
+        ? { plataforma: conexion.plataforma, etiqueta: conexion.etiqueta }
+        : { plataforma: plataformasDisponibles[0]?.[0] ?? "META_ADS" }),
+    });
   }, [open, conexion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const esShopify = form.plataforma === "SHOPIFY";
+  const esMetaAds = form.plataforma === "META_ADS";
+  const conectandoDirecto = esShopify || esMetaAds;
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -120,6 +125,33 @@ export function IntegracionFormModal({
         return;
       }
 
+      if (esMetaAds) {
+        try {
+          const { ok, mensaje } = await conectarMetaAds({
+            app_id: form.meta_app_id.trim(),
+            app_secret: form.meta_app_secret,
+            access_token: form.meta_access_token.trim(),
+            ad_account_id: form.meta_ad_account_id.trim(),
+          });
+          toast[ok ? "success" : "error"](mensaje);
+          onSaved({
+            plataforma: "META_ADS",
+            etiqueta: esEdicion
+              ? conexion?.etiqueta ?? ""
+              : `Meta Ads (${form.meta_ad_account_id.trim()})`,
+            api_key: "",
+          });
+          onOpenChange(false);
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "No se pudo conectar con Meta Ads.",
+          );
+        }
+        return;
+      }
+
       const input: IntegracionInput = {
         plataforma: form.plataforma,
         etiqueta: form.etiqueta.trim(),
@@ -137,6 +169,10 @@ export function IntegracionFormModal({
       }
       onSaved(input);
       onOpenChange(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo guardar la conexión.",
+      );
     } finally {
       setGuardando(false);
     }
@@ -160,14 +196,16 @@ export function IntegracionFormModal({
             className="bg-linear-to-r from-brand-600 to-violet-600 hover:from-brand-600 hover:to-violet-600 hover:opacity-90"
           >
             {guardando
-            ? esShopify
-              ? "Conectando…"
-              : "Guardando…"
-            : esEdicion
-              ? "Guardar cambios"
-              : esShopify
-                ? "Conectar con Shopify"
-                : "Agregar conexión"}
+              ? conectandoDirecto
+                ? "Conectando…"
+                : "Guardando…"
+              : esEdicion
+                ? "Guardar cambios"
+                : esShopify
+                  ? "Conectar con Shopify"
+                  : esMetaAds
+                    ? "Conectar con Meta Ads"
+                    : "Agregar conexión"}
           </Button>
         </>
       }
@@ -178,13 +216,14 @@ export function IntegracionFormModal({
             <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-4 text-sm text-muted-foreground">
               Ya tienes conexiones para todas las plataformas disponibles.
             </p>
-          ) : (
+        ) : (
             <>
               <Label htmlFor="co-plataforma" className={labelCls}>
                 Plataforma
               </Label>
               <Select
                 value={form.plataforma}
+                items={Object.fromEntries(plataformasDisponibles)}
                 onValueChange={(v) =>
                   setForm((f) => ({ ...f, plataforma: v as PlataformaIntegracion }))
                 }
@@ -258,6 +297,83 @@ export function IntegracionFormModal({
               Credentials), lo guarda cifrado junto con las credenciales de la
               tienda y prueba la conexión. Los tokens expiran a las 24 h y se
               renuevan solos.
+            </p>
+          </div>
+        ) : esMetaAds ? (
+          <div className="grid gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="co-meta-app-id" className={labelCls}>
+                App ID
+              </Label>
+              <Input
+                id="co-meta-app-id"
+                value={form.meta_app_id}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, meta_app_id: e.target.value }))
+                }
+                required
+                inputMode="numeric"
+                placeholder="1080296201298518"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="co-meta-ad-account" className={labelCls}>
+                Cuenta de anuncios
+              </Label>
+              <Input
+                id="co-meta-ad-account"
+                value={form.meta_ad_account_id}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, meta_ad_account_id: e.target.value }))
+                }
+                required
+                placeholder="act_447628080460920"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="co-meta-app-secret" className={labelCls}>
+                App Secret
+              </Label>
+              <PasswordInput
+                id="co-meta-app-secret"
+                autoComplete="off"
+                value={form.meta_app_secret}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, meta_app_secret: e.target.value }))
+                }
+                required={!esEdicion}
+                placeholder={esEdicion ? "Deja vacío para conservar el actual" : "••••••••"}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="co-meta-access-token" className={labelCls}>
+                Access Token
+              </Label>
+              <PasswordInput
+                id="co-meta-access-token"
+                autoComplete="off"
+                value={form.meta_access_token}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, meta_access_token: e.target.value }))
+                }
+                required={!esEdicion}
+                placeholder={esEdicion ? "Deja vacío para conservar el actual" : "EAA…"}
+              />
+              {esEdicion && conexion && (
+                <p className="text-sm text-muted-foreground">
+                  Token actual:{" "}
+                  <span className="font-mono text-brand-300/80">
+                    {conexion.api_key_enmascarada}
+                  </span>
+                </p>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              El App Secret y el Access Token se cifran antes de guardarse y
+              nunca se vuelven a mostrar. Al conectar se valida que el token
+              pertenezca a esta app y que tenga acceso a la cuenta de anuncios.
+              Los tokens de Meta no se renuevan solos: si Meta los revoca,
+              genera uno nuevo en el Events Manager y vuelve a guardar.
             </p>
           </div>
         ) : (

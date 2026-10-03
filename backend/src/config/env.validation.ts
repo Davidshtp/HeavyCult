@@ -42,6 +42,11 @@ export const envValidationSchema = Joi.object({
   CLOUDINARY_API_KEY: Joi.string().required(),
   CLOUDINARY_API_SECRET: Joi.string().required(),
 
+  // Permite apuntar a un doble local en pruebas sin tocar el código.
+  META_GRAPH_BASE_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('https://graph.facebook.com/v26.0'),
+
   ADMIN_NOMBRE: Joi.string().required(),
   ADMIN_APELLIDO: Joi.string().allow('').optional(),
   ADMIN_EMAIL: Joi.string().email().required(),

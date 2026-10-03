@@ -9,6 +9,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { IntegracionModule } from './integracion/integracion.module';
+import { MetaAdsModule } from './meta/meta-ads.module';
 import { ShopifyModule } from './shopify/shopify.module';
 import {
   DB_DATABASE,
@@ -60,6 +61,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     IntegracionModule,
     ShopifyModule,
+    MetaAdsModule,
   ],
   controllers: [AppController],
   providers: [

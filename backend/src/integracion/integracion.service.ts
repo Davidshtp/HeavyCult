@@ -10,6 +10,7 @@ import { JWT_SECRET } from '../config/constants';
 import { ActualizarIntegracionDto } from './dto/actualizar-integracion.dto';
 import { CrearIntegracionDto } from './dto/crear-integracion.dto';
 import { ShopifyTokenService } from '../shopify/shopify-token.service';
+import { MetaAdsService } from '../meta/meta-ads.service';
 import {
   Integracion,
   PlataformaIntegracion,
@@ -27,6 +28,22 @@ export interface ResultadoPrueba {
 
 const SHOPIFY_API_VERSION = '2026-07';
 const SHOPIFY_API_TIMEOUT_MS = 10000;
+
+/**
+ * Claves de `config` que nunca deben viajar al navegador. Se filtran por
+ * nombre, no por plataforma, para que un secreto nuevo no se filtre por
+ * olvidar agregarlo a una lista de excepciones.
+ */
+const CLAVES_SECRETAS = new Set([
+  'client_secret',
+  'app_secret',
+  'access_token',
+  'api_key',
+  'appsecret_proof',
+  'token',
+  'password',
+  'secret',
+]);
 
 export interface IntegracionSerializada {
   id_integracion: number;
@@ -48,6 +65,7 @@ export class IntegracionService {
     private readonly integracionRepository: Repository<Integracion>,
     private readonly configService: ConfigService,
     private readonly shopifyTokenService: ShopifyTokenService,
+    private readonly metaAdsService: MetaAdsService,
   ) {}
 
   private get secreto(): string {
@@ -57,7 +75,10 @@ export class IntegracionService {
   private serializar(integracion: Integracion): IntegracionSerializada {
     const configVisible: Record<string, string> = {};
     for (const [clave, valor] of Object.entries(integracion.config ?? {})) {
-      if (clave !== 'client_secret') configVisible[clave] = valor;
+      const esSecreto = CLAVES_SECRETAS.has(clave.toLowerCase());
+      if (!esSecreto && !valor.startsWith('aesgcm.')) {
+        configVisible[clave] = valor;
+      }
     }
     return {
       id_integracion: integracion.id_integracion,
@@ -155,6 +176,8 @@ export class IntegracionService {
     if (integracion.plataforma === PlataformaIntegracion.SHOPIFY) {
       const shop = integracion.config?.['shop'];
       resultado = await this.consultarShopify(apiKey, shop);
+    } else if (integracion.plataforma === PlataformaIntegracion.META_ADS) {
+      resultado = await this.consultarMetaAds(integracion, apiKey);
     } else {
       resultado = {
         ok: false,
@@ -169,6 +192,51 @@ export class IntegracionService {
     await this.integracionRepository.save(integracion);
 
     return resultado;
+  }
+
+  private async consultarMetaAds(
+    integracion: Integracion,
+    accessToken: string,
+  ): Promise<ResultadoPrueba> {
+    const config = integracion.config ?? {};
+    const appId = config['app_id']?.trim();
+    const adAccountId = config['ad_account_id']?.trim();
+
+    if (!appId || !adAccountId) {
+      return {
+        ok: false,
+        mensaje:
+          'A esta conexión de Meta Ads le falta el App ID o la cuenta de anuncios. Vuelve a conectarla desde Configuración → Conexiones.',
+      };
+    }
+
+    const appSecret = this.leerSecretoConfig(config['app_secret']);
+    if (!appSecret) {
+      return {
+        ok: false,
+        mensaje:
+          'A esta conexión de Meta Ads le falta el App Secret. Vuelve a conectarla desde Configuración → Conexiones.',
+      };
+    }
+
+    return this.metaAdsService.probar({
+      appId,
+      appSecret,
+      accessToken,
+      adAccountId,
+    });
+  }
+
+  /** Lee un secreto de `config`, descifrándolo si está cifrado con AES-GCM. */
+  private leerSecretoConfig(valor: string | undefined): string | null {
+    if (!valor) return null;
+    if (!valor.startsWith('aesgcm.')) return valor;
+    if (!this.secreto) return null;
+    try {
+      return descifrarApiKey(this.secreto, valor);
+    } catch {
+      return null;
+    }
   }
 
   private async consultarShopify(

@@ -169,6 +169,16 @@ export function IntegracionesPanel() {
                     <p className="mt-1 font-mono text-[0.85rem] text-brand-300/80">
                       api_key · {conexion.api_key_enmascarada}
                     </p>
+                    {conexion.config?.ad_account_id ? (
+                      <p className="mt-1 font-mono text-[0.8rem] text-muted-foreground">
+                        cuenta · {conexion.config.ad_account_id}
+                      </p>
+                    ) : null}
+                    {conexion.config?.app_id ? (
+                      <p className="font-mono text-[0.8rem] text-muted-foreground">
+                        app · {conexion.config.app_id}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-[0.8rem] text-muted-foreground">
                       Conectada el {formatFecha(conexion.fecha_creacion)}
                     </p>
