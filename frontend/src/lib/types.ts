@@ -47,29 +47,108 @@ export interface Integracion {
   fecha_ultima_prueba?: string | null;
 }
 
-export type EstadoProducto = "ACTIVO" | "INACTIVO";
+// ------------------------------------------------------------- Shopify
+// El catálogo real viene de Shopify vía el backend. `id_producto` es el GID
+// de Shopify (gid://shopify/Product/...) y `id_variante` el de la variante.
+export type EstadoProductoShopify =
+  | "ACTIVE"
+  | "ARCHIVED"
+  | "DRAFT"
+  | "UNLISTED";
 
-export interface Producto {
-  id_producto: number;
-  sku_dropi: string | null;
+export interface OpcionVariante {
   nombre: string;
-  descripcion: string | null;
-  precio_venta: number;
-  costo: number;
-  stock: number;
-  tallas: string[];
-  url_imagen: string | null;
-  estado: EstadoProducto;
-  fecha_creacion: string;
+  valor: string;
 }
 
-export interface DropiProducto {
-  sku: string;
-  nombre: string;
-  descripcion: string | null;
-  precio_venta: number;
-  costo: number;
+export interface VarianteProducto {
+  id_variante: string;
+  titulo: string;
+  sku: string | null;
+  precio: number;
   stock: number;
-  tallas: string[];
+  costo: number | null;
+  opciones: OpcionVariante[];
+}
+
+export interface OpcionProducto {
+  nombre: string;
+  valores: string[];
+}
+
+/**
+ * Estado del medio en Shopify. Una imagen recién subida pasa por `PROCESSING`:
+ * el panel lo dice en vez de hacerse el que ya está lista.
+ */
+export type EstadoImagen =
+  | "READY"
+  | "PROCESSING"
+  | "UPLOADING"
+  | "UPLOADED"
+  | "FAILED"
+  | "SUBMITTED";
+
+export interface ImagenProducto {
+  id: string;
+  url: string;
+  alt: string | null;
+  ancho: number | null;
+  alto: number | null;
+  estado: EstadoImagen | null;
+}
+
+export interface Producto {
+  id_producto: string;
+  titulo: string;
+  handle: string;
+  estado: EstadoProductoShopify;
+  proveedor: string | null;
+  tipo: string | null;
+  tags: string[];
+  descripcion_html: string;
+  garantia: string | null;
   url_imagen: string | null;
+  imagenes: ImagenProducto[];
+  precio_min: number;
+  precio_max: number;
+  costo_min: number | null;
+  stock: number;
+  opciones: OpcionProducto[];
+  variantes: VarianteProducto[];
+  creado: string;
+}
+
+export interface ProductosPagina {
+  productos: Producto[];
+  pagina: number;
+  por_pagina: number;
+  total: number;
+  total_paginas: number;
+  total_variantes: number;
+  resumen: ResumenCatalogo;
+}
+
+export interface ResumenCatalogo {
+  productos: number;
+  variantes: number;
+  variantes_sin_stock: number;
+  unidades: number;
+}
+
+export interface ProductoInput {
+  /** Todos los campos son opcionales: el guardado es parcial. */
+  titulo?: string;
+  descripcion_html?: string;
+  tipo?: string;
+  tags?: string[];
+  // Sin `estado`: publicarlo, archivarlo o pasarlo a borrador se hace en Shopify.
+  // Sin `proveedor`: en Shopify es el `vendor`, que también usa el marketplace.
+}
+
+export interface VarianteInput {
+  id_variante: string;
+  precio?: number;
+  // Sin `costo`: vive en el cost del inventoryItem y solo se cambia en Shopify.
+  // Sin `sku`: Shopify lo usa para sincronizar inventario y feeds.
+  // Sin `stock`: el inventario se ajusta en Shopify.
 }

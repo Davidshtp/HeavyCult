@@ -3,15 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { JWT_SECRET } from '../config/constants';
+import { JWT_SECRET } from '../../config/constants';
 import {
   Integracion,
   PlataformaIntegracion,
-} from '../integracion/entity/integracion.entity';
+} from '../../integracion/entity/integracion.entity';
 import {
   cifrarApiKey,
   descifrarApiKey,
-} from '../integracion/util/cifrador-api-key';
+} from '../../integracion/util/cifrador-api-key';
 import { ShopifyAuthService } from './shopify-auth.service';
 
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;

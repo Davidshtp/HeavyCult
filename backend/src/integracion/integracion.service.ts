@@ -6,10 +6,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { JWT_SECRET } from '../config/constants';
+import { JWT_SECRET, SHOPIFY_API_VERSION } from '../config/constants';
 import { ActualizarIntegracionDto } from './dto/actualizar-integracion.dto';
 import { CrearIntegracionDto } from './dto/crear-integracion.dto';
-import { ShopifyTokenService } from '../shopify/shopify-token.service';
+import { ShopifyTokenService } from '../shopify/core/shopify-token.service';
 import { MetaAdsService } from '../meta/meta-ads.service';
 import {
   Integracion,
@@ -26,7 +26,6 @@ export interface ResultadoPrueba {
   mensaje: string;
 }
 
-const SHOPIFY_API_VERSION = '2026-07';
 const SHOPIFY_API_TIMEOUT_MS = 10000;
 
 /**

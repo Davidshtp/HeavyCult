@@ -1,48 +1,35 @@
-import {
-  Body,
-  Controller,
-  Injectable,
-  NotFoundException,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Injectable, Post, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { JWT_SECRET } from '../config/constants';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { JWT_SECRET } from '../../config/constants';
 import {
   Integracion,
   PlataformaIntegracion,
-} from '../integracion/entity/integracion.entity';
-import {
-  cifrarApiKey,
-  descifrarApiKey,
-} from '../integracion/util/cifrador-api-key';
-import { RolUsuario } from '../user/entity/usuario.entity';
-import { CrearPedidoDto } from './dto/crear-pedido.dto';
+} from '../../integracion/entity/integracion.entity';
+import { cifrarApiKey } from '../../integracion/util/cifrador-api-key';
+import { RolUsuario } from '../../user/entity/usuario.entity';
+import { normalizarShopHost } from '../common/util/normalizar-shop';
+import { ShopifyAuthService } from '../core/shopify-auth.service';
 import { ConectarShopifyDto } from './dto/conectar-shopify.dto';
-import { ShopifyAuthService } from './shopify-auth.service';
-import {
-  ResultadoPedido,
-  ResultadoPrueba,
-  ShopifyService,
-} from './shopify.service';
-import { ShopifyTokenService } from './shopify-token.service';
-import { normalizarShopHost } from './util/normalizar-shop';
+import { ShopifyTiendaService, ResultadoPrueba } from './tienda.service';
 
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Conexión de la tienda Shopify (client credentials) y su prueba de vida. La
+ * ruta queda igual que antes: `POST /auth/shopify/conectar`.
+ */
 @Injectable()
 @Controller('auth/shopify')
-export class ShopifyController {
+export class ShopifyTiendaController {
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: ShopifyAuthService,
-    private readonly shopifyService: ShopifyService,
-    private readonly tokenService: ShopifyTokenService,
+    private readonly shopifyService: ShopifyTiendaService,
     @InjectRepository(Integracion)
     private readonly integracionRepository: Repository<Integracion>,
   ) {}
@@ -96,57 +83,6 @@ export class ShopifyController {
     };
   }
 
-  @Post('pedidos')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RolUsuario.ADMIN)
-  async crearPedido(@Body() dto: CrearPedidoDto) {
-    const { token, shop } = await this.obtenerDatosShopify();
-    let resultado: ResultadoPedido = await this.shopifyService.crearPedido(
-      token,
-      shop,
-      dto,
-    );
-    const renovado = await this.renovarSiTokenFallido(resultado);
-    if (renovado) {
-      resultado = await this.shopifyService.crearPedido(renovado, shop, dto);
-    }
-    return {
-      ok: resultado.ok,
-      mensaje: resultado.mensaje,
-      pedido: resultado.pedido ?? null,
-    };
-  }
-
-  private async obtenerDatosShopify(): Promise<{
-    token: string;
-    shop: string;
-  }> {
-    const integracion = await this.integracionRepository.findOne({
-      where: { plataforma: PlataformaIntegracion.SHOPIFY },
-    });
-    if (!integracion) {
-      throw new NotFoundException(
-        'Shopify aún no está conectado. Conéctalo en Configuración → Conexiones usando el formulario.',
-      );
-    }
-    const shop = integracion.config?.['shop'];
-    if (!shop) {
-      throw new NotFoundException(
-        'La conexión de Shopify no tiene registrada la tienda. Conéctala de nuevo desde Configuración → Conexiones.',
-      );
-    }
-    const secreto = this.configService.get<string>(JWT_SECRET) ?? '';
-    if (!secreto) {
-      throw new NotFoundException(
-        'JWT_SECRET no está configurado en el entorno del servidor.',
-      );
-    }
-    return {
-      token: descifrarApiKey(secreto, integracion.api_key_cifrada),
-      shop,
-    };
-  }
-
   private async guardarIntegracion(
     token: string,
     secreto: string,
@@ -185,18 +121,5 @@ export class ShopifyController {
     });
     await this.integracionRepository.save(nueva);
     return nueva;
-  }
-
-  private async renovarSiTokenFallido(
-    resultado: ResultadoPedido,
-  ): Promise<string | null> {
-    if (resultado.status !== 401) return null;
-
-    const integracion = await this.integracionRepository.findOne({
-      where: { plataforma: PlataformaIntegracion.SHOPIFY },
-    });
-    if (!integracion) return null;
-
-    return this.tokenService.renovarAhora(integracion);
   }
 }

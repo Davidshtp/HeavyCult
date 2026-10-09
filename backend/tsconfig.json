@@ -19,6 +19,12 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  // `scripts/` queda fuera a propósito: son utilidades de mantenimiento que se
+  // ejecutan con ts-node, no parte de la app que se compila a `dist`.
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "scripts"]
 }

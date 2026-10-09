@@ -301,12 +301,14 @@
   }
 }
 
+/* Los fondos ya vienen oscuros desde TOAST_VARS en components/ui/sonner.tsx:
+   acá no se les suma negro, o el texto claro se cacha contra un fondo sucio. */
 [data-sonner-toaster] [data-sonner-toast] {
   position: relative;
   overflow: hidden;
   border-radius: 0.85rem;
-  border: 1px solid color-mix(in oklab, var(--normal-border), black 25%);
-  background: color-mix(in oklab, var(--normal-bg), black 45%);
+  border: 1px solid var(--normal-border);
+  background: var(--normal-bg);
   color: var(--normal-text);
   box-shadow: 0 10px 32px -16px oklch(0.35 0.14 295 / 0.45);
   backdrop-filter: blur(14px);
@@ -319,25 +321,25 @@
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="success"] {
-  background: color-mix(in oklab, var(--success-bg), black 45%);
+  background: var(--success-bg);
   border-color: var(--success-border);
   color: var(--success-text);
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="info"] {
-  background: color-mix(in oklab, var(--info-bg), black 45%);
+  background: var(--info-bg);
   border-color: var(--info-border);
   color: var(--info-text);
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="warning"] {
-  background: color-mix(in oklab, var(--warning-bg), black 45%);
+  background: var(--warning-bg);
   border-color: var(--warning-border);
   color: var(--warning-text);
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="error"] {
-  background: color-mix(in oklab, var(--error-bg), black 45%);
+  background: var(--error-bg);
   border-color: var(--error-border);
   color: var(--error-text);
 }

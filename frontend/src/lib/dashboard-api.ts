@@ -11,26 +11,17 @@
 //   - POST   /integraciones/:id/probar → probarConexionIntegracion (solo admin)
 //   - POST   /auth/shopify/conectar   → conectarShopify (solo admin)
 //   - POST   /auth/meta/conectar      → conectarMetaAds (solo admin)
-// Pendiente de conectar (backends aún no implementados):
-//   - CRUD   /productos                 → catálogo de productos
 import { apiRequest } from "@/lib/api";
-import {
-  generarProductoDropiSintetico,
-  MOCK_DROPI_REGISTRO,
-  MOCK_PRODUCTOS,
-} from "@/lib/dashboard-mock";
 import type {
-  DropiProducto,
-  EstadoProducto,
   Integracion,
   PlataformaIntegracion,
   Producto,
+  ProductosPagina,
+  ProductoInput,
   RolUsuario,
   Usuario,
+  VarianteInput,
 } from "@/lib/types";
-
-const clonar = <T,>(valor: T): T => JSON.parse(JSON.stringify(valor)) as T;
-const esperar = (ms = 400) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 // ------------------------------------------------------------------ Perfil
 export interface MiPerfilEdicion {
@@ -220,97 +211,138 @@ export async function conectarMetaAds(
 }
 
 // ----------------------------------------------------------------- Productos
-let productos: Producto[] = clonar(MOCK_PRODUCTOS);
-let siguienteIdProducto = 1000;
-
-export interface ProductoInput {
-  sku_dropi?: string;
-  nombre: string;
-  descripcion?: string;
-  precio_venta: number;
-  costo: number;
-  stock: number;
-  tallas: string[];
-  url_imagen?: string;
+// Backend conectado (solo admin):
+//   - GET    /shopify/productos?buscar=&pagina=&por_pagina=
+//   - POST   /shopify/productos/sincronizar
+//   - GET    /shopify/productos/:id
+//   - PATCH  /shopify/productos/:id
+//   - PATCH  /shopify/productos/:id/variantes
+//   - DELETE /shopify/productos/:id
+export interface ListarProductosParams {
+  buscar?: string;
+  pagina?: number;
+  porPagina?: number;
 }
 
-export async function listarProductos(): Promise<Producto[]> {
-  await esperar();
-  return clonar(productos);
+export async function listarProductos(
+  params: ListarProductosParams = {},
+): Promise<ProductosPagina> {
+  const query = new URLSearchParams();
+  if (params.buscar?.trim()) query.set("buscar", params.buscar.trim());
+  if (params.pagina) query.set("pagina", String(params.pagina));
+  if (params.porPagina) query.set("por_pagina", String(params.porPagina));
+  const sufijo = query.size > 0 ? `?${query.toString()}` : "";
+  return apiRequest<ProductosPagina>(`/shopify/productos${sufijo}`);
 }
 
-export async function crearProducto(input: ProductoInput): Promise<Producto> {
-  await esperar();
-  const nuevo: Producto = {
-    id_producto: siguienteIdProducto++,
-    sku_dropi: input.sku_dropi?.trim() || null,
-    nombre: input.nombre,
-    descripcion: input.descripcion?.trim() || null,
-    precio_venta: input.precio_venta,
-    costo: input.costo,
-    stock: input.stock,
-    tallas: input.tallas,
-    url_imagen: input.url_imagen?.trim() || null,
-    estado: "ACTIVO",
-    fecha_creacion: new Date().toISOString(),
-  };
-  productos = [nuevo, ...productos];
-  return clonar(nuevo);
+export interface SincronizarResultado {
+  ok: boolean;
+  mensaje: string;
+  productos: number;
+}
+
+export async function sincronizarDropi(): Promise<SincronizarResultado> {
+  return apiRequest<SincronizarResultado>("/shopify/productos/sincronizar", {
+    method: "POST",
+  });
+}
+
+/** El backend envuelve las lecturas en `{ ok, producto }`. */
+interface Envelope<T> {
+  ok: boolean;
+  producto: T;
+}
+
+/** Las escrituras responden `{ ok, mensaje }`: el panel recarga con un GET. */
+interface Escritura {
+  ok: boolean;
+  mensaje: string;
+}
+
+export async function obtenerProducto(id: string): Promise<Producto> {
+  const respuesta = await apiRequest<Envelope<Producto>>(
+    `/shopify/productos/${encodeURIComponent(id)}`,
+  );
+  return respuesta.producto;
 }
 
 export async function actualizarProducto(
-  id: number,
+  id: string,
   input: ProductoInput,
-): Promise<Producto> {
-  await esperar();
-  productos = productos.map((p) => {
-    if (p.id_producto !== id) return p;
-    return {
-      ...p,
-      sku_dropi: input.sku_dropi?.trim() || null,
-      nombre: input.nombre,
-      descripcion: input.descripcion?.trim() || null,
-      precio_venta: input.precio_venta,
-      costo: input.costo,
-      stock: input.stock,
-      tallas: input.tallas,
-      url_imagen: input.url_imagen?.trim() || null,
-    };
-  });
-  return clonar(productos.find((p) => p.id_producto === id)!);
-}
-
-export async function cambiarEstadoProducto(
-  id: number,
-  estado: EstadoProducto,
 ): Promise<void> {
-  await esperar(200);
-  productos = productos.map((p) => (p.id_producto === id ? { ...p, estado } : p));
+  await apiRequest<Escritura>(`/shopify/productos/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
-// ------------------------------------------------------------- Búsqueda Dropi
-// TODO(backend): llamar a Dropi con la API key del módulo de integraciones:
-//   GET /integraciones/dropi/{sku}
-export async function buscarProductoDropi(sku: string): Promise<DropiProducto> {
-  await esperar(900);
-  const limpio = sku.trim().toUpperCase();
-  const enRegistro = MOCK_DROPI_REGISTRO.find(
-    (p) => p.sku.toUpperCase() === limpio,
-  );
-  if (enRegistro) return clonar(enRegistro);
-  if (/^DP-/.test(limpio)) {
-    return { sku: limpio, ...generarProductoDropiSintetico(limpio) };
-  }
-  throw new Error(
-    `El SKU "${sku}" no existe en Dropi. Verifica el identificador.`,
+export async function actualizarVariantes(
+  id: string,
+  variantes: VarianteInput[],
+): Promise<void> {
+  await apiRequest<Escritura>(
+    `/shopify/productos/${encodeURIComponent(id)}/variantes`,
+    { method: "PATCH", body: JSON.stringify({ variantes }) },
   );
 }
 
-export async function eliminarProducto(id: number): Promise<void> {
-  await esperar(200);
-  productos = productos.filter((p) => p.id_producto !== id);
+export async function eliminarProducto(id: string): Promise<void> {
+  await apiRequest<void>(`/shopify/productos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }
 
-export async function sincronizarDropi(): Promise<void> {
-  await esperar(1200);
+/** La garantía es un metafield `multi_line_text_field`, no un campo del producto. */
+export async function actualizarGarantia(
+  id: string,
+  garantia: string,
+): Promise<void> {
+  await apiRequest<Escritura>(
+    `/shopify/productos/${encodeURIComponent(id)}/garantia`,
+    { method: "PATCH", body: JSON.stringify({ garantia }) },
+  );
+}
+
+/**
+ * La imagen se manda como data URL ya comprimida: el backend la sube a Cloudinary
+ * y le pasa la URL a Shopify. El límite de 4 MB del JSON es del backend, así que
+ * comprimir en el navegador no es opcional.
+ */
+export async function agregarImagenProducto(
+  id: string,
+  dataUrl: string,
+  alt?: string | null,
+): Promise<void> {
+  await apiRequest<Escritura>(
+    `/shopify/productos/${encodeURIComponent(id)}/imagenes`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        data_url: dataUrl,
+        alt: alt?.trim() || null,
+      }),
+    },
+  );
+}
+
+/** Manda el orden completo; la primera imagen queda como portada. */
+export async function reordenarImagenesProducto(
+  id: string,
+  ids: string[],
+): Promise<void> {
+  await apiRequest<Escritura>(
+    `/shopify/productos/${encodeURIComponent(id)}/imagenes/orden`,
+    { method: "PATCH", body: JSON.stringify({ ids }) },
+  );
+}
+
+/** Irreversible en Shopify: pedir confirmación antes de llamar. */
+export async function eliminarImagenProducto(
+  id: string,
+  idImagen: string,
+): Promise<void> {
+  await apiRequest<Escritura>(
+    `/shopify/productos/${encodeURIComponent(id)}/imagenes/${encodeURIComponent(idImagen)}`,
+    { method: "DELETE" },
+  );
 }

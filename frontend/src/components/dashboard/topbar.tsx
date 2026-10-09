@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronDownIcon, MenuIcon } from "lucide-react";
 import { Avatar } from "@/components/dashboard/avatar";
 import { cerrarSesion, usePerfil } from "@/components/dashboard/perfil-context";
+import { useTituloTopbar } from "@/components/dashboard/topbar-titulo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,8 +25,11 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
   const { usuario, cargando } = usePerfil();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const tituloPagina = useTituloTopbar();
 
-  const titulo = TITULOS[pathname] ?? "Dashboard";
+  // El detalle de producto publica su propio nombre; el resto usa el título
+  // fijo de la ruta.
+  const titulo = tituloPagina ?? TITULOS[pathname] ?? "Dashboard";
 
   async function salir() {
     setMenuAbierto(false);

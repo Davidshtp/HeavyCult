@@ -34,9 +34,11 @@ export default function RootLayout({
         {children}
         <Toaster
           position="top-right"
+          // Queda por debajo del topbar sticky (`h-16` = 64px + 12px de aire).
+          offset={76}
           gap={6}
-          visibleToasts={1}
-          duration={2500}
+          visibleToasts={3}
+          duration={3500}
         />
       </body>
     </html>

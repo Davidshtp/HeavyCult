@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import type { EstadoProducto, EstadoUsuario } from "@/lib/types";
+import type { EstadoUsuario } from "@/lib/types";
 import { cn } from "cn";
 
-type Estado = EstadoUsuario | EstadoProducto;
+type Estado = EstadoUsuario;
 
 function estadoVar(estado: Estado): string {
   switch (estado) {
@@ -14,6 +14,8 @@ function estadoVar(estado: Estado): string {
       return "bg-muted text-muted-foreground";
     case "BLOQUEADO":
       return "bg-destructive/10 text-destructive dark:bg-destructive/20";
+    default:
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -25,6 +27,8 @@ function dotVar(estado: Estado): string {
       return "bg-muted-foreground";
     case "BLOQUEADO":
       return "bg-destructive";
+    default:
+      return "bg-muted-foreground";
   }
 }
 

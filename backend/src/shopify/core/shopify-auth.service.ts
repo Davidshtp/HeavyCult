@@ -3,7 +3,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { normalizarShopHost } from './util/normalizar-shop';
+import { normalizarShopHost } from '../common/util/normalizar-shop';
 
 const TIEMPO_ESPERA_MS = 10000;
 

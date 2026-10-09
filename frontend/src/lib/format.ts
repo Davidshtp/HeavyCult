@@ -36,9 +36,3 @@ export function formatMoneda(valor: number): string {
     maximumFractionDigits: 0,
   }).format(valor);
 }
-
-export function formatPorcentaje(valor: number): string {
-  return `${valor.toLocaleString("es-CO", {
-    maximumFractionDigits: 1,
-  })}%`;
-}

@@ -16,8 +16,3 @@ export function formatearAdAccountId(valor: string): string {
   const id = normalizarAdAccountId(valor);
   return id ? `${PREFIJO}${id}` : '';
 }
-
-/** Valida que el valor sea una cuenta de anuncios plausible (solo dígitos). */
-export function esAdAccountIdValido(valor: string): boolean {
-  return /^\d{6,20}$/.test(normalizarAdAccountId(valor));
-}

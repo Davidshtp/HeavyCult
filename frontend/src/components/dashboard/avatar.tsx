@@ -3,10 +3,6 @@
 import { useState } from "react";
 import { cn } from "cn";
 
-export function iniciales(nombre: string, apellido: string): string {
-  return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
-}
-
 function svgAvatar(emoji: string, fondo: string, acento: string): string {
   const contenido = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='${fondo}'/><circle cx='50' cy='50' r='47' fill='none' stroke='${acento}' stroke-width='4' opacity='0.3'/><text x='50' y='56' font-size='44' text-anchor='middle' dominant-baseline='central'>${emoji}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(contenido)}`;

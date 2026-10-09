@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { confirmarToast } from "@/lib/confirmar-toast";
 import {
   PLATAFORMA_INTEGRACION_LABEL,
 } from "@/lib/dashboard-mock";
@@ -95,18 +96,29 @@ export function IntegracionesPanel() {
   }
 
   async function manejarEliminar(conexion: Integracion) {
-    if (
-      !window.confirm(
-        `¿Eliminar la conexión "${conexion.etiqueta}"? La acción no se puede deshacer.`,
-      )
-    ) {
-      return;
+    const { id, seguro } = confirmarToast({
+      titulo: `¿Eliminar la conexión "${conexion.etiqueta}"?`,
+      detalle: "La acción no se puede deshacer.",
+    });
+    if (!(await seguro)) return;
+
+    // El mismo id: el toast de confirmación se transforma en el de progreso.
+    const aviso = toast.loading("Eliminando conexión…", { id });
+    try {
+      await eliminarIntegracion(conexion.id_integracion);
+      setConexiones((prev) =>
+        prev.filter((c) => c.id_integracion !== conexion.id_integracion),
+      );
+      toast.success("Conexión eliminada.", {
+        id: aviso,
+        description: conexion.etiqueta,
+      });
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo eliminar la conexión.",
+        { id: aviso },
+      );
     }
-    await eliminarIntegracion(conexion.id_integracion);
-    setConexiones((prev) =>
-      prev.filter((c) => c.id_integracion !== conexion.id_integracion),
-    );
-    toast.success("Conexión eliminada.");
   }
 
   async function manejarGuardado() {
