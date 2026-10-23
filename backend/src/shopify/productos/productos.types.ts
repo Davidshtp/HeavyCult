@@ -51,6 +51,14 @@ export interface MedioProducto {
   estado: EstadoImagenShopify | null;
 }
 
+/**
+ * Campos que Dropify puede volver a escribir desde su ficha (flags `sob_*` del
+ * metafield `dropi._dropi_product`). El panel los usa para avisar al usuario de
+ * que su edición se perderá en la próxima sincronización.
+ */
+export type CampoProductoDropi =
+  'titulo' | 'descripcion_html' | 'precio' | 'imagenes';
+
 export interface ProductoShopify {
   id_producto: string;
   titulo: string;
@@ -70,6 +78,18 @@ export interface ProductoShopify {
   opciones: OpcionProducto[];
   variantes: VarianteProducto[];
   creado: string;
+  /** Origen Dropify: el producto trae el metafield `dropi._dropi_product`. */
+  es_dropi: boolean;
+  /** Id del producto en el catálogo de Dropi (`_dropi_product.id`). */
+  id_dropi: string | null;
+  /** SKU que Dropi le asigna al producto (`_dropi_product.sku`). */
+  sku_dropi: string | null;
+  /** Categoría de Dropi (`_dropi_product.categories[0].name`). */
+  categoria: string | null;
+  /** Precio de venta sugerido por Dropi (`_dropi_product.suggested_price`). */
+  precio_sugerido: number | null;
+  /** Campos que Dropify sobrescribirá al sincronizar (flags `sob_*`). */
+  dropi_sobrescribe: CampoProductoDropi[];
 }
 
 export interface ProductosRespuesta {

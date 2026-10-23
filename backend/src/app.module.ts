@@ -8,6 +8,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { EnviosModule } from './envios/envios.module';
 import { IntegracionModule } from './integracion/integracion.module';
 import { MetaAdsModule } from './meta/meta-ads.module';
 import { ShopifyModule } from './shopify/shopify.module';
@@ -60,6 +61,7 @@ import { UserModule } from './user/user.module';
     CloudinaryModule,
     AuthModule,
     IntegracionModule,
+    EnviosModule,
     ShopifyModule,
     MetaAdsModule,
   ],

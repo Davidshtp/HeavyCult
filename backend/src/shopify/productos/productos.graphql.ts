@@ -17,6 +17,14 @@ export const MEDIA_POR_LECTURA = 50;
 /** Variantes por página en las lecturas de catálogo y detalle. */
 export const VARIANTES_POR_PAGINA = 250;
 
+/**
+ * Metafields por producto en las lecturas. Se piden TODOS los namespaces (no
+ * solo `custom`) porque los productos se importan desde Dropify, que guarda su
+ * ficha completa en el metafield `dropi._dropi_product` (json): sin él se pierden
+ * el costo real, la categoría y los avisos de sobreescritura.
+ */
+export const METAFIELDS_POR_PRODUCTO = 50;
+
 export const CONSULTA_CATALOGO = `query Catalogo($first: Int!, $after: String) {
   products(first: $first, after: $after) {
     pageInfo { hasNextPage endCursor }
@@ -44,8 +52,8 @@ export const CONSULTA_CATALOGO = `query Catalogo($first: Int!, $after: String) {
             }
           }
         }
-        metafields(first: 20, namespace: "custom") {
-          edges { node { key value } }
+        metafields(first: ${METAFIELDS_POR_PRODUCTO}) {
+          edges { node { namespace key value } }
         }
         variants(first: ${VARIANTES_POR_PAGINA}) {
           pageInfo { hasNextPage }
@@ -88,8 +96,8 @@ export const CONSULTA_PRODUCTO = `query Producto($id: ID!) {
         }
       }
     }
-    metafields(first: 20, namespace: "custom") {
-      edges { node { key value } }
+    metafields(first: ${METAFIELDS_POR_PRODUCTO}) {
+      edges { node { namespace key value } }
     }
     variants(first: ${VARIANTES_POR_PAGINA}) {
       pageInfo { hasNextPage }

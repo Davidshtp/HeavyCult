@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ShopifyCredentialsService } from '../core/shopify-credentials.service';
 import { ShopifyGraphqlService } from '../core/shopify-graphql.service';
-import { ListarProductosDto } from './dto/productos.dto';
+import {
+  DireccionOrden,
+  ListarProductosDto,
+  OrdenProductos,
+} from './dto/productos.dto';
 import { CONSULTA_CATALOGO, CONSULTA_PRODUCTO } from './productos.graphql';
 import { mapearProducto } from './productos.mapper';
 import type {
@@ -60,28 +64,79 @@ export class ShopifyProductosCatalogoService {
   }
 
   listar(dto: ListarProductosDto): ProductosRespuesta {
-    const termino = (dto.buscar ?? '').trim().toLowerCase();
     const porPagina = dto.por_pagina ?? 25;
     const pagina = dto.pagina ?? 1;
 
     const todos = this.catalogoVisible();
-    const filtrados = termino
-      ? todos.filter((p) => p.titulo.toLowerCase().includes(termino))
-      : todos;
+    const filtrados = this.filtrar(todos, dto);
+    const ordenados = this.ordenar(filtrados, dto.orden, dto.direccion);
 
-    const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
+    const totalPaginas = Math.max(1, Math.ceil(ordenados.length / porPagina));
     const paginaSegura = Math.min(Math.max(1, pagina), totalPaginas);
     const inicio = (paginaSegura - 1) * porPagina;
-    const ventana = filtrados.slice(inicio, inicio + porPagina);
+    const ventana = ordenados.slice(inicio, inicio + porPagina);
 
     return {
       productos: ventana,
       pagina: paginaSegura,
       por_pagina: porPagina,
-      total: filtrados.length,
+      total: ordenados.length,
       total_paginas: totalPaginas,
       total_variantes: todos.reduce((suma, p) => suma + p.variantes.length, 0),
     };
+  }
+
+  /** Aplica búsqueda y filtros del panel sobre la foto visible del catálogo. */
+  private filtrar(
+    productos: ProductoShopify[],
+    dto: ListarProductosDto,
+  ): ProductoShopify[] {
+    const termino = (dto.buscar ?? '').trim().toLowerCase();
+    const proveedor = (dto.proveedor ?? '').trim().toLowerCase();
+    const { estado, sin_stock } = dto;
+
+    if (!termino && !estado && !sin_stock && !proveedor) return productos;
+
+    return productos.filter((p) => {
+      if (termino && !p.titulo.toLowerCase().includes(termino)) return false;
+      if (estado && p.estado !== estado) return false;
+      if (sin_stock && p.stock > 0) return false;
+      if (proveedor && (p.proveedor ?? '').toLowerCase() !== proveedor) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  /** Sin orden explícito se respeta el orden nativo de Shopify. */
+  private ordenar(
+    productos: ProductoShopify[],
+    orden?: OrdenProductos,
+    direccion?: DireccionOrden,
+  ): ProductoShopify[] {
+    if (!orden) return productos;
+    const factor = direccion === 'desc' ? -1 : 1;
+    return [...productos].sort((a, b) => factor * this.comparar(a, b, orden));
+  }
+
+  private comparar(
+    a: ProductoShopify,
+    b: ProductoShopify,
+    orden: OrdenProductos,
+  ): number {
+    switch (orden) {
+      case 'precio':
+        return a.precio_min - b.precio_min;
+      case 'stock':
+        return a.stock - b.stock;
+      case 'variantes':
+        return a.variantes.length - b.variantes.length;
+      case 'creado':
+        return new Date(a.creado).getTime() - new Date(b.creado).getTime();
+      case 'titulo':
+      default:
+        return a.titulo.localeCompare(b.titulo, 'es', { sensitivity: 'base' });
+    }
   }
 
   /** Datos de las tarjetas KPI: siempre sobre el catálogo completo, no la búsqueda. */
@@ -90,8 +145,15 @@ export class ShopifyProductosCatalogoService {
     variantes: number;
     variantes_sin_stock: number;
     unidades: number;
+    proveedores: string[];
   } {
     const todos = this.catalogoVisible();
+    const proveedores = [
+      ...new Set(
+        todos.map((p) => p.proveedor?.trim()).filter((p): p is string => !!p),
+      ),
+    ].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
     return {
       productos: todos.length,
       variantes: todos.reduce((s, p) => s + p.variantes.length, 0),
@@ -100,6 +162,7 @@ export class ShopifyProductosCatalogoService {
         0,
       ),
       unidades: todos.reduce((s, p) => s + p.stock, 0),
+      proveedores,
     };
   }
 

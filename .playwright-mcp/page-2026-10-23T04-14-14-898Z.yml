@@ -1,0 +1,101 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "HeavyCult, inicio" [ref=e5] [cursor=pointer]:
+          - /url: "#inicio"
+          - generic [ref=e6]: HeavyCult
+        - navigation "Navegación" [ref=e7]:
+          - link "Inicio" [ref=e8] [cursor=pointer]:
+            - /url: "#inicio"
+          - link "Información" [ref=e9] [cursor=pointer]:
+            - /url: "#informacion"
+          - link "Soporte" [ref=e10] [cursor=pointer]:
+            - /url: "#soporte"
+        - link "Ingresar" [ref=e11] [cursor=pointer]:
+          - /url: "#ingresar"
+    - main [ref=e12]:
+      - generic [ref=e14]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - heading "Bienvenido de nuevo" [level=1] [ref=e20]
+            - paragraph [ref=e21]: Ingresa tus credenciales para acceder a tu panel de control.
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - generic [ref=e25]: Correo electrónico
+              - textbox "Correo electrónico Correo electrónico" [ref=e27]:
+                - /placeholder: tucorreo@heavycult.co
+            - generic [ref=e28]:
+              - generic [ref=e29]:
+                - generic [ref=e30]: Contraseña
+                - button "¿Olvidaste tu contraseña?" [ref=e31]
+              - generic [ref=e33]:
+                - textbox "Contraseña" [ref=e34]:
+                  - /placeholder: "********"
+                - button "Mostrar contraseña" [ref=e35]
+            - button "Iniciar sesión" [ref=e39]
+            - paragraph [ref=e41]: Acceso restringido a personal autorizado de HeavyCult.
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading [level=1] [ref=e47]: Recuperar contraseña
+            - paragraph [ref=e48]: Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]: Correo electrónico
+              - textbox [ref=e54]:
+                - /placeholder: tucorreo@heavycult.co
+            - button [ref=e55]:
+              - generic [ref=e56]: Enviar enlace
+            - button [ref=e57]: Volver al inicio de sesión
+      - region "Información de la plataforma" [ref=e60]:
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: "[ // Información ]"
+          - heading "Un ERP que orquesta todo tu negocio." [level=2] [ref=e63]
+          - paragraph [ref=e64]: "HeavyCult ERP centraliza, automatiza y escala operaciones de comercio electrónico y dropshipping con pago contra entrega. En un solo panel de control: publicidad multicanal, atención al cliente impulsada por IA, gestión de tienda con Shopify y analítica financiera en tiempo real."
+          - list [ref=e65]:
+            - listitem [ref=e66]: Meta Ads
+            - listitem [ref=e67]: TikTok
+            - listitem [ref=e68]: WhatsApp Business API
+            - listitem [ref=e69]: Shopify
+            - listitem [ref=e70]: Servientrega
+            - listitem [ref=e71]: Inter Rapidísimo
+            - listitem [ref=e72]: Coordinadora
+            - listitem [ref=e73]: Envía
+        - generic [ref=e74]:
+          - paragraph [ref=e75]: "[ // Módulos clave ]"
+          - heading "El ciclo completo en cinco módulos." [level=3] [ref=e76]
+          - generic [ref=e77]:
+            - article [ref=e78]:
+              - paragraph [ref=e79]: "[ 01 ]"
+              - heading "Publicidad Multicanal" [level=4] [ref=e80]
+              - paragraph [ref=e81]: Creador multicanal de campañas desde un solo formulario y visualización del gasto publicitario diario en tiempo real.
+              - paragraph [ref=e82]: "upstream: meta / tiktok"
+            - article [ref=e83]:
+              - paragraph [ref=e84]: "[ 02 ]"
+              - heading "WhatsApp & Ventas IA" [level=4] [ref=e85]
+              - paragraph [ref=e86]: Bandeja de entrada unificada y agente de IA entrenado con la base de conocimientos del ERP para cierre de ventas y captura automática de datos de envío.
+              - paragraph [ref=e87]: "api: whatsapp business"
+            - article [ref=e88]:
+              - paragraph [ref=e89]: "[ 03 ]"
+              - heading "Catálogo & Shopify Sync" [level=4] [ref=e90]
+              - paragraph [ref=e91]: Importación de productos desde la tienda Shopify y enriquecimiento de tallas, variantes, políticas y objeciones para la IA.
+              - paragraph [ref=e92]: "sync: shopify"
+            - article [ref=e93]:
+              - paragraph [ref=e94]: "[ 04 ]"
+              - heading "Logística & Trazabilidad" [level=4] [ref=e95]
+              - paragraph [ref=e96]: Rastreo multitransportadora en tiempo real con notificaciones automáticas al cliente según el estado de la guía.
+              - paragraph [ref=e97]: "tracking: múltiples couriers"
+            - article [ref=e98]:
+              - paragraph [ref=e99]: "[ 05 ]"
+              - heading "Analítica & Finanzas" [level=4] [ref=e100]
+              - paragraph [ref=e101]: "CPA real cruzado con tasa de entrega efectiva y cálculo automático del margen neto por orden: venta, inversión, Shopify y flete."
+              - paragraph [ref=e102]: "bi: margen real"
+            - link "→ Ingresa y usa HeavyCult panel de control unificado" [ref=e103] [cursor=pointer]:
+              - /url: "#ingresar"
+              - generic [ref=e104]: → Ingresa y usa HeavyCult
+              - generic [ref=e105]: panel de control unificado
+    - contentinfo [ref=e106]:
+      - generic [ref=e107]:
+        - paragraph [ref=e108]: ── HeavyCult v1.0 · ERP ──
+        - paragraph [ref=e109]: soporte@heavycult.co
+  - region "Notifications alt+T"

@@ -1,176 +1,205 @@
 import { Injectable } from '@nestjs/common';
-import { SHOPIFY_API_VERSION } from '../../config/constants';
-import {
-  TIEMPO_ESPERA_MS,
-  extraerCampo,
-  extraerDetalleError,
-  stringificarValor,
-} from '../common/shopify-http';
-import { normalizarShopHost } from '../common/util/normalizar-shop';
+import { ShopifyCredentialsService } from '../core/shopify-credentials.service';
+import { ShopifyGraphqlService } from '../core/shopify-graphql.service';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
+import {
+  CONSULTA_LISTAR_PEDIDOS,
+  CONSULTA_PEDIDO,
+  MUTACION_CREAR_PEDIDO,
+  PEDIDOS_POR_PAGINA,
+} from './pedidos.graphql';
+import { mapearPaginaPedidos, mapearPedidoDetalle } from './pedidos.mapper';
+import type {
+  PaginaPedidos,
+  PedidoDetalle,
+  ResultadoPedido,
+} from './pedidos.types';
 
-export interface DatosPedidoCreado {
-  id_pedido: number;
-  numero: string;
-  total: number;
-  estado_financiero: string;
+interface LineaShopify {
+  variantId: string;
+  quantity: number;
 }
 
-export interface ResultadoPedido {
-  ok: boolean;
-  mensaje: string;
-  pedido?: DatosPedidoCreado;
-  status?: number;
+interface DireccionShopify {
+  firstName: string;
+  lastName: string;
+  address1: string;
+  city: string;
+  province: string;
+  countryCode: string;
+  phone: string;
 }
+
+/** Los pedidos siempre se envían dentro de Colombia. */
+const CODIGO_PAIS = 'CO';
 
 /**
- * Alta de pedidos en Shopify (`orders.json`). Va por REST y no por GraphQL
- * porque el flujo del panel arma el pedido completo de una sola vez.
+ * Pedidos en Shopify vía GraphQL (`orderCreate`). Shopify es la fuente de
+ * verdad del listado y el detalle: acá no se guarda nada en la base local.
+ *
+ * `financialStatus` por defecto es PENDING porque el flujo es contraentrega:
+ * el transportador cobra al recibir, la orden queda abierta hasta confirmarlo.
  */
 @Injectable()
 export class ShopifyPedidosService {
-  async crearPedido(
-    token: string,
-    shop: string,
-    dto: CrearPedidoDto,
-  ): Promise<ResultadoPedido> {
-    const shopHost = normalizarShopHost(shop);
-    const url = `https://${shopHost}/admin/api/${SHOPIFY_API_VERSION}/orders.json`;
-    const controlador = new AbortController();
-    const temporizador = setTimeout(
-      () => controlador.abort(),
-      TIEMPO_ESPERA_MS,
+  constructor(
+    private readonly graphql: ShopifyGraphqlService,
+    private readonly credenciales: ShopifyCredentialsService,
+  ) {}
+
+  async crearPedido(dto: CrearPedidoDto): Promise<ResultadoPedido> {
+    const resultado = await this.credenciales.conReintento((datos) =>
+      this.graphql.ejecutar<{
+        orderCreate: {
+          order: {
+            id: string;
+            name: string;
+            displayFinancialStatus: string | null;
+            currentTotalPriceSet: {
+              shopMoney: { amount: string | null } | null;
+            } | null;
+          } | null;
+          userErrors: { field: string[]; message: string }[];
+        };
+      }>(
+        datos.token,
+        datos.shop,
+        MUTACION_CREAR_PEDIDO,
+        {
+          order: construirPedido(dto),
+          options: { sendReceipt: false },
+        },
+        'crear pedido',
+      ),
     );
 
-    try {
-      const respuesta = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': token,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ order: mapearPedido(dto) }),
-        signal: controlador.signal,
-      });
-      const cuerpo: unknown = await respuesta.json().catch(() => null);
+    if (!resultado.ok) {
+      return { ok: false, mensaje: resultado.mensaje };
+    }
 
-      if (respuesta.status === 201) {
-        const pedidoObj =
-          cuerpo && typeof cuerpo === 'object'
-            ? (cuerpo as Record<string, unknown>).order
-            : null;
-        const pedido = pedidoObj as Record<string, unknown> | null;
-        const numero = extraerCampo(pedido, 'name') ?? '';
-        const id = extraerCampo(pedido, 'id');
-        const total = extraerCampo(pedido, 'total_price');
-        return {
-          ok: true,
-          mensaje: `Pedido creado en Shopify${numero ? ` (#${numero})` : ''}.`,
-          pedido: {
-            id_pedido: id ? Number(id) : NaN,
-            numero,
-            total: total ? Number(total) : 0,
-            estado_financiero: extraerCampo(pedido, 'financial_status') ?? '',
-          },
-        };
-      }
-
-      const detalle =
-        extraerDetalleError(cuerpo) ?? extraerErroresCampos(cuerpo);
-
-      if (respuesta.status === 401) {
-        return {
-          ok: false,
-          status: 401,
-          mensaje:
-            'El token de Shopify fue rechazado (401). Regenera el token en Configuración → Apps → Desarrollar apps.',
-        };
-      }
-      if (respuesta.status === 403) {
-        return {
-          ok: false,
-          mensaje:
-            'El token es válido pero la app no tiene el scope write_orders. Agrégalo en Admin API scopes de la app.',
-        };
-      }
-      if (respuesta.status === 404) {
-        return {
-          ok: false,
-          mensaje: `No se encontró la tienda Shopify (${shopHost}).`,
-        };
-      }
-      if (respuesta.status === 429) {
-        return {
-          ok: false,
-          mensaje:
-            'Shopify rechazó la petición por límite de uso (HTTP 429). Intenta nuevamente en un momento.',
-        };
-      }
-
-      return {
-        ok: false,
-        mensaje: `Shopify no pudo crear el pedido (HTTP ${respuesta.status})${detalle ? `: ${detalle}` : '.'}`,
-      };
-    } catch {
+    const respuesta = resultado.datos?.orderCreate;
+    const errores = respuesta?.userErrors ?? [];
+    if (!respuesta?.order || errores.length > 0) {
+      const detalle = errores.map((error) => error.message).join(' | ');
       return {
         ok: false,
         mensaje:
-          'No se pudo contactar la API de Shopify (sin respuesta o tiempo agotado).',
+          detalle || 'Shopify no pudo crear el pedido sin dar más detalle.',
       };
-    } finally {
-      clearTimeout(temporizador);
     }
+
+    return {
+      ok: true,
+      mensaje: `Pedido creado en Shopify (${respuesta.order.name}).`,
+      pedido: {
+        id_pedido: respuesta.order.id,
+        numero: respuesta.order.name,
+        estado_financiero: respuesta.order.displayFinancialStatus ?? 'PENDING',
+        total:
+          Number(
+            respuesta.order.currentTotalPriceSet?.shopMoney?.amount ?? '0',
+          ) || 0,
+        creado: new Date().toISOString(),
+        cliente: null,
+        nota: dto.nota ?? null,
+        ciudad: dto.direccion_envio.ciudad,
+        departamento: dto.direccion_envio.departamento,
+      },
+    };
+  }
+
+  async listar(
+    cursor: string | null,
+  ): Promise<{ ok: boolean; mensaje: string; pagina: PaginaPedidos | null }> {
+    const resultado = await this.credenciales.conReintento((datos) =>
+      this.graphql.ejecutar<unknown>(
+        datos.token,
+        datos.shop,
+        CONSULTA_LISTAR_PEDIDOS,
+        { first: PEDIDOS_POR_PAGINA, ...(cursor ? { after: cursor } : {}) },
+        'listar pedidos',
+      ),
+    );
+
+    if (!resultado.ok) {
+      return { ok: false, mensaje: resultado.mensaje, pagina: null };
+    }
+
+    return {
+      ok: true,
+      mensaje: 'ok',
+      pagina: mapearPaginaPedidos(resultado.datos),
+    };
+  }
+
+  async obtener(
+    id: string,
+  ): Promise<{ ok: boolean; mensaje: string; pedido: PedidoDetalle | null }> {
+    const resultado = await this.credenciales.conReintento((datos) =>
+      this.graphql.ejecutar<unknown>(
+        datos.token,
+        datos.shop,
+        CONSULTA_PEDIDO,
+        { id },
+        `obtener pedido ${id}`,
+      ),
+    );
+
+    if (!resultado.ok) {
+      return { ok: false, mensaje: resultado.mensaje, pedido: null };
+    }
+
+    const pedido = mapearPedidoDetalle(resultado.datos);
+    if (!pedido) {
+      return {
+        ok: false,
+        mensaje: 'No se encontró el pedido en Shopify.',
+        pedido: null,
+      };
+    }
+    return { ok: true, mensaje: 'ok', pedido };
   }
 }
 
-function mapearPedido(dto: CrearPedidoDto): Record<string, unknown> {
-  const c = dto.cliente;
-  const d = c.direccion;
+function construirPedido(dto: CrearPedidoDto): Record<string, unknown> {
+  const cliente = dto.cliente;
+  const direccion = dto.direccion_envio;
 
-  const cliente: Record<string, string> = {
-    first_name: c.nombre,
-    last_name: c.apellido,
-    phone: c.telefono,
+  const lineItems: LineaShopify[] = dto.items.map((item) => ({
+    variantId: item.id_variante,
+    quantity: item.cantidad,
+  }));
+
+  const direccionCompleta: DireccionShopify = {
+    firstName: cliente.nombre,
+    lastName: cliente.apellido,
+    address1: direccion.calle,
+    city: direccion.ciudad,
+    province: direccion.departamento,
+    countryCode: CODIGO_PAIS,
+    phone: cliente.telefono,
   };
-  if (c.email) cliente.email = c.email;
 
-  const direccion: Record<string, string> = {
-    first_name: c.nombre,
-    last_name: c.apellido,
-    address1: d.calle,
-    city: d.ciudad,
-    province: d.departamento,
-    country: d.pais,
-    phone: c.telefono,
+  const order: Record<string, unknown> = {
+    lineItems,
+    email: cliente.email,
+    // El teléfono es obligatorio para Dropi (sincroniza los pedidos como
+    // contraentrega): con `orderCreate` sin teléfono, Dropify responde
+    // «Debe ingresar un número celular» al intentar enviar la orden.
+    phone: cliente.telefono,
+    customer: {
+      toUpsert: {
+        email: cliente.email,
+        phone: cliente.telefono,
+        firstName: cliente.nombre,
+        lastName: cliente.apellido,
+      },
+    },
+    financialStatus: (dto.estado_financiero ?? 'pending').toUpperCase(),
+    shippingAddress: direccionCompleta,
+    billingAddress: direccionCompleta,
   };
-  if (d.codigo_postal) direccion.zip = d.codigo_postal;
+  if (dto.nota) order.note = dto.nota;
 
-  const items = dto.items.map((item) => {
-    const base: Record<string, unknown> = {
-      title: item.titulo,
-      price: item.precio.toFixed(2),
-      quantity: item.cantidad,
-    };
-    if (item.sku) base.sku = item.sku;
-    return base;
-  });
-
-  const pedido: Record<string, unknown> = {
-    line_items: items,
-    customer: cliente,
-    shipping_address: direccion,
-    financial_status: dto.estado_financiero ?? 'pending',
-    send_receipt: false,
-  };
-  if (dto.nota) pedido.note = dto.nota;
-
-  return pedido;
-}
-
-function extraerErroresCampos(cuerpo: unknown): string | null {
-  if (!cuerpo || typeof cuerpo !== 'object') return null;
-  const errores = (cuerpo as Record<string, unknown>).errors;
-  if (errores === null || errores === undefined) return null;
-  return stringificarValor(errores);
+  return order;
 }

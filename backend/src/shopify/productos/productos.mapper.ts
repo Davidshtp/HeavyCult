@@ -1,4 +1,5 @@
 import type {
+  CampoProductoDropi,
   EstadoImagenShopify,
   EstadoProductoShopify,
   ImagenProducto,
@@ -43,7 +44,9 @@ export function mapearProducto(
     );
   }
 
-  const metafields = leerMetafields(n);
+  const crudos = leerMetafieldsCrudos(n);
+  const metafields = leerMetafieldsCustom(crudos);
+  const dropi = leerDropi(crudos);
   const precios = variantes
     .map((v) => v.precio)
     .filter((p) => Number.isFinite(p));
@@ -75,11 +78,17 @@ export function mapearProducto(
     costo_min:
       costos.length > 0
         ? Math.min(...costos)
-        : leerNumero(metafields['costo_de_producto']),
+        : (dropi?.costo ?? leerNumero(metafields['costo_de_producto'])),
     stock: variantes.reduce((suma, v) => suma + v.stock, 0),
     opciones: construirOpciones(variantes),
     variantes,
     creado: texto(n['createdAt']),
+    es_dropi: dropi !== null,
+    id_dropi: dropi?.id_dropi ?? null,
+    sku_dropi: dropi?.sku_dropi ?? null,
+    categoria: dropi?.categoria ?? null,
+    precio_sugerido: dropi?.precio_sugerido ?? null,
+    dropi_sobrescribe: dropi?.sobrescribe ?? [],
   };
 }
 
@@ -103,20 +112,115 @@ export function mapearVariante(bruto: unknown): VarianteProducto | null {
   };
 }
 
-export function leerMetafields(
+export interface MetafieldCrudo {
+  namespace: string;
+  key: string;
+  value: string;
+}
+
+export function leerMetafieldsCrudos(
   n: Record<string, unknown>,
-): Record<string, string> {
-  const resultado: Record<string, string> = {};
+): MetafieldCrudo[] {
   const edges = leerLista(n['metafields'], 'edges');
+  const crudos: MetafieldCrudo[] = [];
   for (const edge of edges) {
     const nodo = leerObjeto(leerObjeto(edge)?.['node']);
+    const namespace = nodo?.['namespace'];
     const key = nodo?.['key'];
     const value = nodo?.['value'];
-    if (typeof key === 'string' && typeof value === 'string') {
-      resultado[key] = value;
+    if (
+      typeof namespace === 'string' &&
+      typeof key === 'string' &&
+      typeof value === 'string'
+    ) {
+      crudos.push({ namespace, key, value });
+    }
+  }
+  return crudos;
+}
+
+/** Metafields del namespace `custom` indexados por clave (garantía, costo…). */
+export function leerMetafieldsCustom(
+  crudos: MetafieldCrudo[],
+): Record<string, string> {
+  const resultado: Record<string, string> = {};
+  for (const metafield of crudos) {
+    if (metafield.namespace === 'custom') {
+      resultado[metafield.key] = metafield.value;
     }
   }
   return resultado;
+}
+
+/** Namespace y clave que Dropify usa para la ficha completa del producto. */
+const NAMESPACE_DROPI = 'dropi';
+const KEY_DROPI_PRODUCT = '_dropi_product';
+
+/** Flags `sob_*` que Dropify usa para decidir qué campos reescribe al sincronizar. */
+const SOBRESCRIBE_DROPI: { clave: string; campo: CampoProductoDropi }[] = [
+  { clave: 'sob_nombre', campo: 'titulo' },
+  { clave: 'sob_descripcion', campo: 'descripcion_html' },
+  { clave: 'sob_precio', campo: 'precio' },
+  { clave: 'sob_images', campo: 'imagenes' },
+];
+
+export interface DatosDropi {
+  id_dropi: string | null;
+  sku_dropi: string | null;
+  categoria: string | null;
+  /** Costo real del proveedor: `sale_price` de la ficha de Dropi. */
+  costo: number | null;
+  precio_sugerido: number | null;
+  sobrescribe: CampoProductoDropi[];
+}
+
+/**
+ * Lee la ficha de Dropi (`dropi._dropi_product`) que trae el producto importado
+ * desde la app. Devuelve `null` si el producto no viene de Dropify o si el json
+ * está corrupto: en ese caso el panel se comporta como un producto manual.
+ */
+export function leerDropi(crudos: MetafieldCrudo[]): DatosDropi | null {
+  const metafield = crudos.find(
+    (c) => c.namespace === NAMESPACE_DROPI && c.key === KEY_DROPI_PRODUCT,
+  );
+  if (!metafield) return null;
+
+  let json: unknown;
+  try {
+    json = JSON.parse(metafield.value);
+  } catch {
+    return null;
+  }
+  const datos = leerObjeto(json);
+  if (!datos) return null;
+
+  return {
+    id_dropi: texto(datos['id']) || null,
+    sku_dropi: texto(datos['sku']) || null,
+    categoria: leerCategoriaDropi(datos['categories']),
+    costo: leerNumero(datos['sale_price']),
+    precio_sugerido: leerNumero(datos['suggested_price']),
+    sobrescribe: leerSobrescribeDropi(datos),
+  };
+}
+
+function leerCategoriaDropi(bruto: unknown): string | null {
+  if (!Array.isArray(bruto)) return null;
+  for (const item of bruto) {
+    const nombre = leerObjeto(item)?.['name'];
+    if (typeof nombre === 'string' && nombre.trim()) return nombre.trim();
+  }
+  return null;
+}
+
+function leerSobrescribeDropi(
+  datos: Record<string, unknown>,
+): CampoProductoDropi[] {
+  const campos: CampoProductoDropi[] = [];
+  for (const { clave, campo } of SOBRESCRIBE_DROPI) {
+    if (datos[clave] === true) campos.push(campo);
+  }
+  return campos;
 }
 
 export function leerImagen(media: unknown): string | null {

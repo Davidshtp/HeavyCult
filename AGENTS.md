@@ -6,7 +6,6 @@ Monorepo de la plataforma HeavyCult. Repositorio: `github.com/Davidshtp/HeavyCul
 
 - `frontend/` — Next.js 15.5.25 (Turbopack) + React 19 + Tailwind CSS 4 + shadcn/ui (base-ui), tiptap, zod, react-hook-form, sonner, lucide.
 - `backend/` — NestJS + TypeORM + PostgreSQL; auth JWT/passport, throttler, helmet, class-validator/joi, cloudinary, handlebars, @nestjs/schedule.
-- `chrome-extension-dropi/` — extensión Chrome (integración Dropi).
 
 ## Reglas operativas
 

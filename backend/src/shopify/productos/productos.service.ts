@@ -64,6 +64,7 @@ export class ShopifyProductosService {
     variantes: number;
     variantes_sin_stock: number;
     unidades: number;
+    proveedores: string[];
   } {
     return this.catalogo.resumen();
   }

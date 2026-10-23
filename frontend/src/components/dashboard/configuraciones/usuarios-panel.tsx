@@ -212,7 +212,7 @@ export function UsuariosPanel() {
                     value={filtroRol}
                     onValueChange={(v) => setFiltroRol((v as RolUsuario) ?? "TODOS")}
                   >
-                    <SelectTrigger size="sm">
+                    <SelectTrigger size="sm" className="w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -227,7 +227,7 @@ export function UsuariosPanel() {
                       setFiltroEstado((v as EstadoUsuario) ?? "TODOS")
                     }
                   >
-                    <SelectTrigger size="sm">
+                    <SelectTrigger size="sm" className="w-44">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

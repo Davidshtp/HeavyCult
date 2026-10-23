@@ -13,11 +13,20 @@
 //   - POST   /auth/meta/conectar      → conectarMetaAds (solo admin)
 import { apiRequest } from "@/lib/api";
 import type {
+  CrearPedidoInput,
+  Departamento,
+  DireccionOrden,
+  EstadoProductoShopify,
   Integracion,
+  Municipio,
+  OrdenProductos,
+  PaginaPedidos,
+  PedidoDetalle,
   PlataformaIntegracion,
   Producto,
   ProductosPagina,
   ProductoInput,
+  ResultadoCrearPedido,
   RolUsuario,
   Usuario,
   VarianteInput,
@@ -222,6 +231,11 @@ export interface ListarProductosParams {
   buscar?: string;
   pagina?: number;
   porPagina?: number;
+  estado?: EstadoProductoShopify;
+  sinStock?: boolean;
+  proveedor?: string;
+  orden?: OrdenProductos;
+  direccion?: DireccionOrden;
 }
 
 export async function listarProductos(
@@ -231,6 +245,11 @@ export async function listarProductos(
   if (params.buscar?.trim()) query.set("buscar", params.buscar.trim());
   if (params.pagina) query.set("pagina", String(params.pagina));
   if (params.porPagina) query.set("por_pagina", String(params.porPagina));
+  if (params.estado) query.set("estado", params.estado);
+  if (params.sinStock) query.set("sin_stock", "true");
+  if (params.proveedor?.trim()) query.set("proveedor", params.proveedor.trim());
+  if (params.orden) query.set("orden", params.orden);
+  if (params.direccion) query.set("direccion", params.direccion);
   const sufijo = query.size > 0 ? `?${query.toString()}` : "";
   return apiRequest<ProductosPagina>(`/shopify/productos${sufijo}`);
 }
@@ -345,4 +364,55 @@ export async function eliminarImagenProducto(
     `/shopify/productos/${encodeURIComponent(id)}/imagenes/${encodeURIComponent(idImagen)}`,
     { method: "DELETE" },
   );
+}
+
+// ------------------------------------------------------------------ Envíos
+// Backend conectado (solo admin):
+//   - GET /envios/departamentos
+//   - GET /envios/municipios?departamento_id=XX
+export async function listarDepartamentos(): Promise<Departamento[]> {
+  const { departamentos } = await apiRequest<{ departamentos: Departamento[] }>(
+    "/envios/departamentos",
+  );
+  return departamentos;
+}
+
+export async function listarMunicipios(
+  departamentoId: string,
+): Promise<Municipio[]> {
+  const { municipios } = await apiRequest<{ municipios: Municipio[] }>(
+    `/envios/municipios?departamento_id=${encodeURIComponent(departamentoId)}`,
+  );
+  return municipios;
+}
+
+// ------------------------------------------------------------------ Pedidos
+// Backend conectado (solo admin):
+//   - GET    /shopify/pedidos?cursor=...
+//   - GET    /shopify/pedidos/:id
+//   - POST   /shopify/pedidos
+export async function listarPedidos(
+  cursor?: string,
+): Promise<PaginaPedidos> {
+  const sufijo = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  const { pagina } = await apiRequest<{ pagina: PaginaPedidos }>(
+    `/shopify/pedidos${sufijo}`,
+  );
+  return pagina;
+}
+
+export async function obtenerPedido(id: string): Promise<PedidoDetalle> {
+  const { pedido } = await apiRequest<{ pedido: PedidoDetalle }>(
+    `/shopify/pedidos/${encodeURIComponent(id)}`,
+  );
+  return pedido;
+}
+
+export async function crearPedido(
+  input: CrearPedidoInput,
+): Promise<ResultadoCrearPedido> {
+  return apiRequest<ResultadoCrearPedido>("/shopify/pedidos", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

@@ -1,88 +1,77 @@
 import {
   Body,
   Controller,
+  Get,
+  HttpException,
+  HttpStatus,
   Injectable,
-  NotFoundException,
+  Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import {
-  Integracion,
-  PlataformaIntegracion,
-} from '../../integracion/entity/integracion.entity';
 import { RolUsuario } from '../../user/entity/usuario.entity';
-import { ShopifyCredentialsService } from '../core/shopify-credentials.service';
-import { ShopifyTokenService } from '../core/shopify-token.service';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
-import { ShopifyPedidosService, ResultadoPedido } from './pedidos.service';
+import { ShopifyPedidosService } from './pedidos.service';
 
-/**
- * Alta de pedidos en Shopify. La ruta queda igual que antes:
- * `POST /auth/shopify/pedidos`.
- *
- * Si el token del pedido sale vencido se renueva una vez y se reintenta: es el
- * mismo reintento que ya hacía el controlador único.
- */
-@Injectable()
-@Controller('auth/shopify')
-export class ShopifyPedidosController {
-  constructor(
-    private readonly shopifyService: ShopifyPedidosService,
-    private readonly tokenService: ShopifyTokenService,
-    private readonly credentialsService: ShopifyCredentialsService,
-    @InjectRepository(Integracion)
-    private readonly integracionRepository: Repository<Integracion>,
-  ) {}
+/** Un GID de pedido de Shopify ("gid://shopify/Order/123") no es seguro en una URL. */
+const GID_PEDIDO = /^gid:\/\/shopify\/Order\/\d+$/;
 
-  @Post('pedidos')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RolUsuario.ADMIN)
-  async crearPedido(@Body() dto: CrearPedidoDto) {
-    const { token, shop } = await this.obtenerDatosShopify();
-    let resultado: ResultadoPedido = await this.shopifyService.crearPedido(
-      token,
-      shop,
-      dto,
+function normalizarIdPedido(id: string): string {
+  const valor = id?.trim() ?? '';
+  const decodificado = valor.includes('%')
+    ? (() => {
+        try {
+          return decodeURIComponent(valor);
+        } catch {
+          return valor;
+        }
+      })()
+    : valor;
+
+  if (!GID_PEDIDO.test(decodificado)) {
+    throw new HttpException(
+      'El identificador del pedido no es un GID válido de Shopify.',
+      HttpStatus.BAD_REQUEST,
     );
-    const renovado = await this.renovarSiTokenFallido(resultado);
-    if (renovado) {
-      resultado = await this.shopifyService.crearPedido(renovado, shop, dto);
+  }
+  return decodificado;
+}
+
+@Injectable()
+@Controller('shopify/pedidos')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(RolUsuario.ADMIN)
+export class ShopifyPedidosController {
+  constructor(private readonly pedidosService: ShopifyPedidosService) {}
+
+  @Post()
+  async crear(@Body() dto: CrearPedidoDto) {
+    const resultado = await this.pedidosService.crearPedido(dto);
+    if (!resultado.ok) {
+      throw new HttpException(resultado.mensaje, HttpStatus.BAD_GATEWAY);
     }
-    return {
-      ok: resultado.ok,
-      mensaje: resultado.mensaje,
-      pedido: resultado.pedido ?? null,
-    };
+    return { ok: true, mensaje: resultado.mensaje, pedido: resultado.pedido };
   }
 
-  private async obtenerDatosShopify(): Promise<{
-    token: string;
-    shop: string;
-  }> {
-    try {
-      return await this.credentialsService.obtener();
-    } catch (error) {
-      throw new NotFoundException(
-        error instanceof Error ? error.message : 'Shopify no está conectado.',
-      );
+  @Get()
+  async listar(@Query('cursor') cursor?: string) {
+    const resultado = await this.pedidosService.listar(cursor ?? null);
+    if (!resultado.ok) {
+      throw new HttpException(resultado.mensaje, HttpStatus.BAD_GATEWAY);
     }
+    return { ok: true, pagina: resultado.pagina };
   }
 
-  private async renovarSiTokenFallido(
-    resultado: ResultadoPedido,
-  ): Promise<string | null> {
-    if (resultado.status !== 401) return null;
-
-    const integracion = await this.integracionRepository.findOne({
-      where: { plataforma: PlataformaIntegracion.SHOPIFY },
-    });
-    if (!integracion) return null;
-
-    return this.tokenService.renovarAhora(integracion);
+  @Get(':id')
+  async obtener(@Param('id') id: string) {
+    const resultado = await this.pedidosService.obtener(normalizarIdPedido(id));
+    if (!resultado.ok) {
+      throw new HttpException(resultado.mensaje, HttpStatus.NOT_FOUND);
+    }
+    return { ok: true, pedido: resultado.pedido };
   }
 }

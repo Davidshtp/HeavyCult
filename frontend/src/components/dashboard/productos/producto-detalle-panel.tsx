@@ -15,6 +15,8 @@ import {
   PencilIcon,
   RefreshCwIcon,
   ShieldCheckIcon,
+  ShoppingCartIcon,
+  StoreIcon,
   TagIcon,
   Trash2Icon,
   TriangleAlertIcon,
@@ -63,7 +65,37 @@ import {
 } from "@/lib/dashboard-api";
 import { ApiClientError } from "@/lib/api";
 import type { BorradorProducto } from "@/lib/borrador-producto";
-import type { Producto } from "@/lib/types";
+import type { CampoProductoDropi, Producto, VarianteProducto } from "@/lib/types";
+
+/** Etiqueta legible de cada campo que Dropify reescribe al sincronizar. */
+const NOMBRE_CAMPO_DROPI: Record<CampoProductoDropi, string> = {
+  titulo: "el título",
+  descripcion_html: "la descripción",
+  precio: "el precio de venta",
+  imagenes: "las imágenes",
+};
+
+function listarCamposDropi(campos: CampoProductoDropi[]): string {
+  const nombres = campos.map((campo) => NOMBRE_CAMPO_DROPI[campo]);
+  if (nombres.length <= 1) return nombres.join("");
+  return `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
+}
+
+/**
+ * Costo de la variante para la tabla: usa el costo por variante y, si Shopify no
+ * lo trae (unidad de costo vacía), cae al costo de la ficha de Dropi cuando el
+ * producto tiene una sola variante (donde `costo_min` es exactamente ese costo).
+ */
+function costoVarianteMostrar(
+  variante: VarianteProducto,
+  producto: Producto,
+): number | null {
+  if (variante.costo !== null) return variante.costo;
+  if (producto.es_dropi && producto.variantes.length === 1) {
+    return producto.costo_min;
+  }
+  return null;
+}
 
 /** Tarjeta de dato suelto; la primera de la fila va destacada. */
 function Dato({
@@ -357,6 +389,12 @@ export function ProductoDetallePanel({ id }: { id: string }) {
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <EtiquetaEstadoProducto estado={producto.estado} />
+              {producto.es_dropi && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-2 py-0.5 font-mono text-[0.65rem] text-brand-300">
+                  <StoreIcon className="size-3" />
+                  Dropi
+                </span>
+              )}
               <span className="flex items-center gap-1 font-mono text-[0.7rem] text-muted-foreground">
                 <HashIcon className="size-3" />
                 {producto.handle}
@@ -397,6 +435,29 @@ export function ProductoDetallePanel({ id }: { id: string }) {
                   </>
                 )}
               </span>
+
+              {producto.categoria && (
+                <span className="flex items-center gap-1.5 text-sm">
+                  <TagIcon className="size-3.5 text-white/40" />
+                  <span className="text-white/50">Categoría</span>
+                  <span className="font-medium text-white/90">
+                    {producto.categoria}
+                  </span>
+                </span>
+              )}
+
+              {producto.es_dropi && (
+                <span className="flex items-center gap-1.5 font-mono text-[0.7rem] text-white/60">
+                  <StoreIcon className="size-3.5 text-brand-400" />
+                  {producto.id_dropi && <span>ID Dropi {producto.id_dropi}</span>}
+                  {producto.sku_dropi && (
+                    <>
+                      <span className="text-white/30">·</span>
+                      <span>SKU {producto.sku_dropi}</span>
+                    </>
+                  )}
+                </span>
+              )}
 
               {editando && borrador ? (
                 <span className="flex items-start gap-1.5">
@@ -447,6 +508,13 @@ export function ProductoDetallePanel({ id }: { id: string }) {
                   <PencilIcon className="size-4" />
                   Editar producto
                 </Button>
+                <Link
+                  href={`/dashboard/pedidos/nuevo?producto=${encodeURIComponent(producto.id_producto)}`}
+                  className={buttonVariants({ variant: "default" })}
+                >
+                  <ShoppingCartIcon className="size-4" />
+                  Hacer pedido
+                </Link>
                 <Button
                   variant="ghost"
                   className="text-destructive/80 hover:text-destructive"
@@ -495,6 +563,12 @@ export function ProductoDetallePanel({ id }: { id: string }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Dato icono={CircleDollarSignIcon} etiqueta="Precio de venta" destacado>
               {rangoPrecio}
+              {producto.precio_sugerido !== null &&
+                producto.precio_sugerido !== producto.precio_min && (
+                  <span className="mt-0.5 block text-[0.62rem] font-normal text-white/40">
+                    Sugerido {formatMoneda(producto.precio_sugerido)}
+                  </span>
+                )}
             </Dato>
             <Dato icono={CircleDollarSignIcon} etiqueta="Costo">
               {producto.costo_min === null ? "—" : formatMoneda(producto.costo_min)}
@@ -525,6 +599,19 @@ export function ProductoDetallePanel({ id }: { id: string }) {
             </div>
           )}
 
+          {editando && producto.es_dropi && producto.dropi_sobrescribe.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-brand-500/25 bg-brand-500/10 px-4 py-2.5 text-sm text-brand-100">
+              <StoreIcon className="size-4 shrink-0" />
+              <span>
+                Producto administrado por Dropi: al sincronizar, Dropify
+                sobrescribirá
+              </span>
+              <span className="font-medium text-brand-200">
+                {listarCamposDropi(producto.dropi_sobrescribe)}.
+              </span>
+            </div>
+          )}
+
           {editando && borrador && (
             <section className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
               <Seccion titulo="Tipo de producto" />
@@ -539,6 +626,8 @@ export function ProductoDetallePanel({ id }: { id: string }) {
               />
               <p className="mt-2 text-xs text-white/35">
                 Vaciar el campo quita el tipo en Shopify.
+                {producto.es_dropi &&
+                  " En productos de Dropi, el tipo refleja la categoría con la que se importó."}
               </p>
             </section>
           )}
@@ -599,6 +688,10 @@ export function ProductoDetallePanel({ id }: { id: string }) {
                       const etiqueta =
                         variante.opciones.map((o) => o.valor).join(" · ") ||
                         variante.titulo;
+                      const costoMostrado = costoVarianteMostrar(
+                        variante,
+                        producto,
+                      );
                       return (
                         <tr
                           key={variante.id_variante}
@@ -640,9 +733,9 @@ export function ProductoDetallePanel({ id }: { id: string }) {
                             />
                           </td>
                           <td className="px-4 py-2.5 text-right font-mono text-xs tabular-nums text-muted-foreground">
-                            {variante.costo === null
+                            {costoMostrado === null
                               ? "—"
-                              : formatMoneda(variante.costo)}
+                              : formatMoneda(costoMostrado)}
                           </td>
                           <td className="px-4 py-2.5 text-center font-mono tabular-nums text-white/60">
                             {variante.stock}
@@ -696,6 +789,8 @@ export function ProductoDetallePanel({ id }: { id: string }) {
               <p className="text-xs text-white/35">
                 SKU, stock, costo, handle, estado y proveedor se administran en
                 Shopify; no se pueden cambiar desde acá.
+                {producto.es_dropi &&
+                  " El costo de los productos de Dropi se lee de su ficha en Dropify."}
               </p>
             </>
           )}

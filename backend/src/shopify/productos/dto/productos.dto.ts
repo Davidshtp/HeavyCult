@@ -1,7 +1,9 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -12,6 +14,26 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import type { EstadoProductoShopify } from '../productos.types';
+
+export const ORDENES_PRODUCTO = [
+  'titulo',
+  'precio',
+  'stock',
+  'creado',
+  'variantes',
+] as const;
+export type OrdenProductos = (typeof ORDENES_PRODUCTO)[number];
+
+export const DIRECCIONES_ORDEN = ['asc', 'desc'] as const;
+export type DireccionOrden = (typeof DIRECCIONES_ORDEN)[number];
+
+const ESTADOS_PRODUCTO: EstadoProductoShopify[] = [
+  'ACTIVE',
+  'ARCHIVED',
+  'DRAFT',
+  'UNLISTED',
+];
 
 export class ListarProductosDto {
   @IsOptional()
@@ -31,6 +53,29 @@ export class ListarProductosDto {
   @Min(1)
   @Max(100)
   por_pagina?: number;
+
+  @IsOptional()
+  @IsIn(ESTADOS_PRODUCTO)
+  estado?: EstadoProductoShopify;
+
+  // Llega como string en la query: se normaliza a booleano antes de validar.
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  sin_stock?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  proveedor?: string;
+
+  @IsOptional()
+  @IsIn(ORDENES_PRODUCTO)
+  orden?: OrdenProductos;
+
+  @IsOptional()
+  @IsIn(DIRECCIONES_ORDEN)
+  direccion?: DireccionOrden;
 }
 
 export class ActualizarProductoDto {

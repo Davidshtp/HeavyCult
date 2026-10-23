@@ -1,0 +1,189 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - complementary [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - link [ref=f2e5] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=f2e6]:
+            - paragraph [ref=f2e7]: HeavyCult
+            - paragraph [ref=f2e8]: Sistema · ERP
+        - navigation [ref=f2e138]:
+          - generic [ref=f2e139]:
+            - paragraph [ref=f2e140]: Principal
+            - list [ref=f2e141]:
+              - listitem [ref=f2e142]:
+                - link "Visión general" [ref=f2e143] [cursor=pointer]:
+                  - /url: /dashboard
+          - generic [ref=f2e150]:
+            - paragraph [ref=f2e151]: Herramientas
+            - list [ref=f2e152]:
+              - listitem [ref=f2e153]:
+                - link "Productos / Dropi" [ref=f2e154] [cursor=pointer]:
+                  - /url: /dashboard/productos
+              - listitem [ref=f2e160]:
+                - link "Pedidos" [ref=f2e161] [cursor=pointer]:
+                  - /url: /dashboard/pedidos
+              - listitem [ref=f2e168]:
+                - generic [ref=f2e169]:
+                  - generic [ref=f2e173]: Publicidad
+                  - generic [ref=f2e174]: pronto
+              - listitem [ref=f2e175]:
+                - generic [ref=f2e176]:
+                  - generic [ref=f2e180]: Chat IA
+                  - generic [ref=f2e181]: pronto
+              - listitem [ref=f2e182]:
+                - generic [ref=f2e183]:
+                  - generic [ref=f2e189]: Logística
+                  - generic [ref=f2e190]: pronto
+              - listitem [ref=f2e191]:
+                - generic [ref=f2e192]:
+                  - generic [ref=f2e195]: Analítica
+                  - generic [ref=f2e196]: pronto
+          - generic [ref=f2e197]:
+            - paragraph [ref=f2e198]: Configuración
+            - list [ref=f2e199]:
+              - listitem [ref=f2e200]:
+                - link "Mi perfil" [ref=f2e201] [cursor=pointer]:
+                  - /url: /dashboard/configuraciones/perfil
+              - listitem [ref=f2e206]:
+                - link "Usuarios y roles" [ref=f2e207] [cursor=pointer]:
+                  - /url: /dashboard/configuraciones/usuarios
+              - listitem [ref=f2e214]:
+                - link "Conexiones (API keys)" [ref=f2e215] [cursor=pointer]:
+                  - /url: /dashboard/configuraciones/integraciones
+        - generic [ref=f2e25]:
+          - button "Cerrar sesión" [ref=f2e26]
+          - paragraph [ref=f2e27]: v0.1 · maquetación
+    - generic [ref=f2e28]:
+      - banner [ref=f2e29]:
+        - generic [ref=f2e30]:
+          - generic [ref=f2e31]:
+            - generic [ref=f2e32]: //
+            - generic [ref=f2e33]: Nuevo pedido
+          - button "Heavy Cult Heavy Cult davidtrujillo2207@gmail.com" [ref=f2e221]:
+            - img "Heavy Cult" [ref=f2e222]
+            - generic [ref=f2e223]:
+              - generic [ref=f2e224]: Heavy Cult
+              - generic [ref=f2e225]: davidtrujillo2207@gmail.com
+      - main [ref=f2e36]:
+        - generic [ref=f2e38]:
+          - generic [ref=f2e40]:
+            - generic [ref=f2e41]: //
+            - generic [ref=f2e42]:
+              - heading "Nuevo pedido" [level=2] [ref=f2e43]
+              - paragraph [ref=f2e44]: Contraentrega. El pedido se crea directo en Shopify.
+          - generic [ref=f2e45]:
+            - generic [ref=f2e46]:
+              - navigation "Progreso del pedido" [ref=f2e47]:
+                - list [ref=f2e48]:
+                  - listitem [ref=f2e49]:
+                    - button "Paso 1 Producto" [ref=f2e50]:
+                      - generic [ref=f2e56]:
+                        - generic [ref=f2e57]: Paso 1
+                        - generic [ref=f2e58]: Producto
+                  - listitem [ref=f2e60]:
+                    - button "Paso 2 Cliente" [ref=f2e61]:
+                      - generic [ref=f2e66]:
+                        - generic [ref=f2e67]: Paso 2
+                        - generic [ref=f2e68]: Cliente
+                  - listitem [ref=f2e70]:
+                    - button "Paso 3 Envío" [ref=f2e71]:
+                      - generic [ref=f2e76]:
+                        - generic [ref=f2e77]: Paso 3
+                        - generic [ref=f2e78]: Envío
+                  - listitem [ref=f2e80]:
+                    - button "Paso 4 Confirmar" [disabled] [ref=f2e81]:
+                      - generic [ref=f2e87]:
+                        - generic [ref=f2e88]: Paso 4
+                        - generic [ref=f2e89]: Confirmar
+              - generic [ref=f2e377]:
+                - generic [ref=f2e383]:
+                  - heading "Envío" [level=3] [ref=f2e384]
+                  - paragraph [ref=f2e385]: ¿A dónde va este pedido? El pago es contraentrega.
+                - generic [ref=f2e386]:
+                  - generic [ref=f2e387]:
+                    - generic [ref=f2e388]: Departamento *
+                    - combobox "Departamento" [expanded] [ref=f2e389]:
+                      - generic [ref=f2e390]: Elegí un departamento
+                      - img [aria-hidden]: ▼
+                    - listbox [ref=f2e416]:
+                      - option "ANTIOQUIA" [active] [ref=f2e417]
+                      - option "ATLÁNTICO" [ref=f2e419]
+                      - option "BOGOTÁ, D.C." [ref=f2e421]
+                      - option "BOLÍVAR" [ref=f2e423]
+                      - option "BOYACÁ" [ref=f2e425]
+                      - option "CALDAS" [ref=f2e427]
+                      - option "CAQUETÁ" [ref=f2e429]
+                      - option "CAUCA" [ref=f2e431]
+                      - option "CESAR" [ref=f2e433]
+                      - option "CÓRDOBA" [ref=f2e435]
+                      - option "CUNDINAMARCA" [ref=f2e437]
+                      - option "CHOCÓ" [ref=f2e439]
+                      - option "HUILA" [ref=f2e441]
+                      - option "LA GUAJIRA" [ref=f2e443]
+                      - option "MAGDALENA" [ref=f2e445]
+                      - option "META" [ref=f2e447]
+                      - option "NARIÑO" [ref=f2e449]
+                      - option "NORTE DE SANTANDER" [ref=f2e451]
+                      - option "QUINDÍO" [ref=f2e453]
+                      - option "RISARALDA" [ref=f2e455]
+                      - option "SANTANDER" [ref=f2e457]
+                      - option "SUCRE" [ref=f2e459]
+                      - option "TOLIMA" [ref=f2e461]
+                      - option "VALLE DEL CAUCA" [ref=f2e463]
+                      - option "ARAUCA" [ref=f2e465]
+                      - option "CASANARE" [ref=f2e467]
+                      - option "PUTUMAYO" [ref=f2e469]
+                      - option "ARCHIPIÉLAGO DE SAN ANDRÉS, PROVIDENCIA Y SANTA CATALINA" [ref=f2e471]
+                      - option "AMAZONAS" [ref=f2e473]
+                      - option "GUAINÍA" [ref=f2e475]
+                      - option "GUAVIARE" [ref=f2e477]
+                      - option "VAUPÉS" [ref=f2e479]
+                      - option "VICHADA" [ref=f2e481]
+                    - textbox [aria-hidden] [ref=f2e391]
+                  - generic [ref=f2e392]:
+                    - generic [ref=f2e393]: Municipio *
+                    - combobox "Municipio" [disabled] [ref=f2e394]:
+                      - generic [ref=f2e395]: Elegí primero un departamento
+                      - img [aria-hidden]: ▼
+                    - textbox [disabled] [aria-hidden] [ref=f2e396]
+                - generic [ref=f2e397]:
+                  - generic [ref=f2e398]: Dirección
+                  - 'textbox "Calle 12 # 34-56, barrio…" [ref=f2e399]'
+                  - paragraph [ref=f2e400]: Si la dejás vacía, se envía como «Sin especificar».
+                - generic [ref=f2e401]:
+                  - generic [ref=f2e402]: Observación
+                  - textbox "Referencias, horario de entrega, indicaciones para el mensajero…" [ref=f2e405]
+                  - paragraph [ref=f2e406]: Se guarda como nota del pedido y la ve el operador logístico.
+              - generic [ref=f2e106]:
+                - button "Atrás" [ref=f2e373]
+                - button "Siguiente" [ref=f2e107]
+            - complementary [ref=f2e108]:
+              - generic [ref=f2e109]:
+                - generic [ref=f2e110]: Recibo
+                - generic [ref=f2e115]: Contraentrega
+              - generic [ref=f2e121]:
+                - generic [ref=f2e122]:
+                  - img "Airpods pro 3 Generacion 1.1" [ref=f2e338]
+                  - generic [ref=f2e339]:
+                    - paragraph [ref=f2e340]: Airpods pro 3 Generacion 1.1
+                    - paragraph [ref=f2e341]: Única
+                    - paragraph [ref=f2e342]: 1 × $ 100.000
+                - generic [ref=f2e128]:
+                  - generic [ref=f2e129]:
+                    - generic [ref=f2e130]: Subtotal
+                    - generic [ref=f2e131]: $ 100.000
+                  - generic [ref=f2e132]:
+                    - generic [ref=f2e133]: Envío
+                    - generic [ref=f2e134]: Contraentrega
+                  - generic [ref=f2e135]:
+                    - generic [ref=f2e136]: Total a cobrar
+                    - generic [ref=f2e137]: $ 100.000
+                - generic [ref=f2e408]:
+                  - paragraph [ref=f2e409]: Cliente
+                  - paragraph [ref=f2e410]: Prueba Visual
+                  - paragraph [ref=f2e411]: prueba.visual@example.com
+                  - paragraph [ref=f2e412]: "3001234567"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e233] [cursor=pointer]
+  - alert [ref=f2e237]
