@@ -14,5 +14,6 @@ import { IntegracionService } from './integracion.service';
   ],
   controllers: [IntegracionController],
   providers: [IntegracionService],
+  exports: [IntegracionService],
 })
 export class IntegracionModule {}

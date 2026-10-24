@@ -24,6 +24,7 @@ import { envValidationSchema } from './config/env.validation';
 import { MailModule } from './mail/mail.module';
 import { TokenModule } from './token/token.module';
 import { UserModule } from './user/user.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { UserModule } from './user/user.module';
     EnviosModule,
     ShopifyModule,
     MetaAdsModule,
+    WhatsappModule,
   ],
   controllers: [AppController],
   providers: [

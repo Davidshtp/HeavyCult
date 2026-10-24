@@ -1,7 +1,7 @@
 import {
   BarChart3Icon,
-  BotIcon,
   MegaphoneIcon,
+  MessagesSquareIcon,
   PackageIcon,
   TruckIcon,
 } from "lucide-react";
@@ -19,15 +19,20 @@ export interface DashboardModule {
 
 const ICONOS: Record<number, React.ComponentType<{ className?: string }>> = {
   0: MegaphoneIcon,
-  1: BotIcon,
+  1: MessagesSquareIcon,
   2: PackageIcon,
   3: TruckIcon,
   4: BarChart3Icon,
 };
 
+const ENLACES: Record<number, string> = {
+  1: "/dashboard/conversaciones",
+  2: "/dashboard/productos",
+};
+
 export const DASHBOARD_MODULES: DashboardModule[] = MODULES.map((m, i) => ({
   ...m,
-  href: i === 2 ? "/dashboard/productos" : null,
-  pronto: i !== 2,
+  href: ENLACES[i] ?? null,
+  pronto: i !== 1 && i !== 2,
   icon: ICONOS[i],
 }));

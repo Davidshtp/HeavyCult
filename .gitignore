@@ -25,6 +25,11 @@ Thumbs.db
 
 # Testing
 coverage/
+.playwright-mcp/
+
+# Docker / Evolution local
+instances/
+evolution_instances/
 
 # Misc
 *.pid

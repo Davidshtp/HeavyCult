@@ -1,0 +1,83 @@
+services:
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: heavycult-evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution_db
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolution_password_2026
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+    networks:
+      - heavycult-net
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: heavycult-evolution-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - evolution_redis_data:/data
+    networks:
+      - heavycult-net
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: heavycult-evolution-api
+    restart: unless-stopped
+    depends_on:
+      - evolution-postgres
+      - evolution-redis
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-heavycult_evolution_secret_key_2026}
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      - LANGUAGE=es
+      - CONFIG_SESSION_PHONE_CLIENT=HeavyCult ERP
+
+      # Base de datos interna de Evolution API (Prisma ORM)
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution_password_2026@evolution-postgres:5432/evolution_db?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_heavycult
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=false
+      - DATABASE_SAVE_MESSAGE_UPDATE=false
+      - DATABASE_SAVE_DATA_CONTACTS=false
+      - DATABASE_SAVE_DATA_CHATS=false
+
+      # Caché Redis para colas y sesiones
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://evolution-redis:6379/1
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - CACHE_LOCAL_ENABLED=false
+
+      # Webhooks y control de instancias
+      - WEBHOOK_GLOBAL_ENABLED=false
+      - DEL_INSTANCE=false
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - heavycult-net
+
+networks:
+  heavycult-net:
+    name: heavycult_network
+    driver: bridge
+
+volumes:
+  evolution_postgres_data:
+    name: heavycult_evolution_postgres_data
+  evolution_redis_data:
+    name: heavycult_evolution_redis_data
+  evolution_instances:
+    name: heavycult_evolution_instances

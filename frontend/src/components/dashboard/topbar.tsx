@@ -15,6 +15,8 @@ import { cn } from "cn";
 const TITULOS: Record<string, string> = {
   "/dashboard": "Visión general",
   "/dashboard/productos": "Productos · Dropi",
+  "/dashboard/conversaciones": "Conversaciones",
+  "/dashboard/configuraciones/whatsapp": "Configuraciones · WhatsApp",
   "/dashboard/configuraciones/perfil": "Configuraciones · Mi perfil",
   "/dashboard/configuraciones/usuarios": "Configuraciones · Usuarios y roles",
   "/dashboard/configuraciones/integraciones": "Configuraciones · Conexiones",

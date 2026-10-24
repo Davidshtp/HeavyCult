@@ -1,10 +1,11 @@
 import {
   BarChart3Icon,
-  BotIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
+  MessagesSquareIcon,
   PackageIcon,
+  QrCodeIcon,
   ShoppingCartIcon,
   TruckIcon,
   UserRoundIcon,
@@ -50,7 +51,11 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShoppingCartIcon,
       },
       { href: null, label: "Publicidad", icon: MegaphoneIcon, pronto: true },
-      { href: null, label: "Chat IA", icon: BotIcon, pronto: true },
+      {
+        href: "/dashboard/conversaciones",
+        label: "Conversaciones",
+        icon: MessagesSquareIcon,
+      },
       { href: null, label: "Logística", icon: TruckIcon, pronto: true },
       { href: null, label: "Analítica", icon: BarChart3Icon, pronto: true },
     ],
@@ -67,6 +72,12 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard/configuraciones/usuarios",
         label: "Usuarios y roles",
         icon: UsersIcon,
+        adminOnly: true,
+      },
+      {
+        href: "/dashboard/configuraciones/whatsapp",
+        label: "WhatsApp",
+        icon: QrCodeIcon,
         adminOnly: true,
       },
       {

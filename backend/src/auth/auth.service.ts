@@ -27,6 +27,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { InicioSesionDto } from './dto/inicio-sesion.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SubirImagenDto } from './dto/subir-imagen.dto';
+import type { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -105,6 +106,14 @@ export class AuthService {
       rol: usuario.rol,
     };
     return this.jwtService.sign(payload);
+  }
+
+  /**
+   * Verifica el JWT de la cookie para autenticar el handshake de Socket.IO,
+   * donde los guards de Nest no se ejecutan.
+   */
+  async verificarToken(token: string): Promise<JwtPayload> {
+    return this.jwtService.verifyAsync<JwtPayload>(token);
   }
 
   async getUsuarioPorId(idUsuario: number): Promise<Usuario> {

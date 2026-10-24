@@ -11,7 +11,7 @@ import {
   SERVER_PORT,
 } from './config/constants';
 
-const CUERPO_MAXIMO_JSON = '4mb';
+const CUERPO_MAXIMO_JSON = '14mb';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });

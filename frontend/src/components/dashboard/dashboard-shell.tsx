@@ -12,13 +12,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
   const pathname = usePathname();
 
-  // El detalle de producto aprovecha todo el ancho disponible (imágenes +
-  // variantes + info en paralelo); el resto del dashboard se mantiene
-  // centrado y legible en el ancho por defecto.
+  // El detalle de producto y la bandeja de conversaciones aprovechan todo el ancho
+  // disponible; el resto del dashboard se mantiene centrado y legible en max-w-6xl.
   const detalleProducto =
     !!pathname &&
     pathname.startsWith("/dashboard/productos/") &&
     pathname !== "/dashboard/productos/";
+
+  const esConversaciones = pathname === "/dashboard/conversaciones";
 
   return (
     <PerfilProvider>
@@ -32,13 +33,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           />
           <div className="flex min-h-svh min-w-0 flex-1 flex-col">
             <Topbar onMenu={() => setSidebarAbierto(true)} />
-            <main className="flex-1">
+            <main className={cn("flex-1", esConversaciones && "flex flex-col min-h-0")}>
               <div
                 className={cn(
-                  "mx-auto w-full py-6 sm:py-8 lg:py-8",
-                  detalleProducto
-                    ? "max-w-[1800px] px-5 sm:px-8 lg:px-12 lg:py-10"
-                    : "max-w-6xl px-4 sm:px-6 lg:px-8",
+                  "mx-auto w-full",
+                  esConversaciones
+                    ? "flex-1 flex flex-col min-h-0 max-w-none px-3 sm:px-5 lg:px-6 py-3 sm:py-4"
+                    : detalleProducto
+                      ? "max-w-[1800px] px-5 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10"
+                      : "max-w-6xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-8",
                 )}
               >
                 {children}

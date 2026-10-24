@@ -77,4 +77,21 @@ npm run lint    # eslint
 npm run start:dev
 ```
 
+## WhatsApp / Evolution API (Docker)
+
+Para la integración de WhatsApp (gestión de instancias, códigos QR y chat en tiempo real), se utiliza Evolution API v2 con Redis gestionados vía Docker:
+
+```bash
+# Iniciar servicios de WhatsApp (Evolution API en :8080 + Redis en :6379)
+docker compose up -d
+
+# Ver registros en tiempo real
+docker compose logs -f evolution-api
+
+# Detener los servicios
+docker compose down
+```
+
+La API de Evolution queda expuesta en `http://localhost:8080` con la clave configurada en `backend/.env` (`EVOLUTION_API_KEY`). El webhook configurado por defecto para desarrollo apunta a `http://host.docker.internal:5560/api/whatsapp/webhooks/evolution`.
+
 ## Licencia y uso, junto con el esquema, se documentarán en fases posteriores.

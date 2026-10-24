@@ -47,6 +47,20 @@ export const envValidationSchema = Joi.object({
     .uri({ scheme: ['http', 'https'] })
     .default('https://graph.facebook.com/v26.0'),
 
+  // WhatsApp: la conexión real se configura desde el panel y se guarda
+  // cifrada en `integracion`; estas variables son el fallback de desarrollo.
+  WHATSAPP_PROVIDER: Joi.string()
+    .valid('evolution', 'cloud')
+    .default('evolution'),
+  EVOLUTION_API_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://localhost:8080'),
+  EVOLUTION_API_KEY: Joi.string().allow('').optional(),
+  EVOLUTION_WEBHOOK_PUBLIC_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://localhost:5560/api/whatsapp/webhooks/evolution'),
+  EVOLUTION_TIMEOUT_MS: Joi.number().integer().positive().default(15000),
+
   ADMIN_NOMBRE: Joi.string().required(),
   ADMIN_APELLIDO: Joi.string().allow('').optional(),
   ADMIN_EMAIL: Joi.string().email().required(),

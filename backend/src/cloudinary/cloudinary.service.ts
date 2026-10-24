@@ -9,6 +9,7 @@ import {
 
 const CARPETA_AVATARES = 'heavycult/avatars';
 const CARPETA_PRODUCTOS = 'heavycult/productos';
+const CARPETA_WHATSAPP = 'heavycult/whatsapp';
 const TAMANO_MAX_BYTES = 2 * 1024 * 1024;
 /**
  * El cuerpo del backend acepta 4 MB de JSON y una data URL de base64 pesa un 33%
@@ -17,6 +18,51 @@ const TAMANO_MAX_BYTES = 2 * 1024 * 1024;
  */
 const TAMANO_MAX_PRODUCTO_BYTES = Math.floor((3 * 1024 * 1024 * 4) / 5);
 const MIMES_PERMITIDOS = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
+function convertirADataUrl(valor: string, mimeType: string): string {
+  if (valor.startsWith('data:')) return valor;
+  return `data:${mimeType};base64,${valor}`;
+}
+
+function extraerBufferDataUrl(dataUrl: string): Buffer {
+  const separador = dataUrl.indexOf(',');
+  if (!dataUrl.startsWith('data:') || separador < 0) {
+    throw new BadRequestException(
+      'El archivo multimedia no tiene un formato válido.',
+    );
+  }
+
+  const codificado = dataUrl.slice(separador + 1);
+  try {
+    return Buffer.from(codificado, 'base64');
+  } catch {
+    throw new BadRequestException(
+      'El archivo multimedia no tiene un formato válido.',
+    );
+  }
+}
+
+function describirError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Error desconocido';
+  }
+}
+
+function esBinarioMediaValido(buffer: Buffer, tipo: string): boolean {
+  if (tipo === 'IMAGEN') {
+    return (
+      (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) ||
+      buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
+      buffer.subarray(0, 4).toString() === 'RIFF' ||
+      buffer.subarray(0, 4).toString() === 'WEBP'
+    );
+  }
+  return buffer.length > 0;
+}
 
 export interface ResultadoSubida {
   url_imagen: string;
@@ -99,6 +145,134 @@ export class CloudinaryService {
         'No fue posible subir la imagen. Inténtalo más tarde.',
       );
     }
+  }
+
+  async subirMediaWhatsapp(
+    mediaData: string,
+    tipo: 'IMAGEN' | 'AUDIO' | 'VIDEO' | 'DOCUMENTO',
+    mimeType: string,
+  ): Promise<ResultadoSubida> {
+    const esUrl = /^https?:\/\//i.test(mediaData);
+    let fuente: string;
+    try {
+      fuente = esUrl
+        ? await this.descargarMediaWhatsapp(mediaData, mimeType, tipo)
+        : convertirADataUrl(mediaData, mimeType);
+    } catch (error) {
+      this.logger.error(
+        `No fue posible descargar el archivo de WhatsApp (${tipo}, ${mimeType}): ${describirError(error)}`,
+      );
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException(
+        'No fue posible descargar el archivo multimedia.',
+      );
+    }
+    const coincidencia = esUrl
+      ? null
+      : new RegExp(
+          `^data:${mimeType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')};base64,([A-Za-z0-9+/=]+)$`,
+        ).exec(fuente);
+    if (!coincidencia && !esUrl) {
+      throw new BadRequestException('El archivo multimedia no tiene un formato válido.');
+    }
+    const bytes = coincidencia
+      ? Math.floor((coincidencia[1].length * 3) / 4)
+      : 0;
+    if (bytes > 10 * 1024 * 1024) {
+      throw new BadRequestException('El archivo multimedia no puede superar 10 MB.');
+    }
+
+    try {
+      const buffer = extraerBufferDataUrl(fuente);
+      const resultado = await new Promise<{
+        secure_url: string;
+        public_id: string;
+      }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type:
+              tipo === 'IMAGEN'
+                ? 'image'
+                : tipo === 'VIDEO' || tipo === 'AUDIO'
+                  ? 'video'
+                  : 'raw',
+            folder: CARPETA_WHATSAPP,
+            overwrite: false,
+          },
+          (error, resultado) => {
+            if (error || !resultado) {
+              reject(error ?? new Error('Cloudinary no devolvió resultado.'));
+              return;
+            }
+            resolve({
+              secure_url: resultado.secure_url,
+              public_id: resultado.public_id,
+            });
+          },
+        );
+        stream.end(buffer);
+      });
+      return {
+        url_imagen: resultado.secure_url,
+        public_id: resultado.public_id,
+      };
+    } catch (error) {
+      this.logger.error(
+        `No fue posible subir el archivo de WhatsApp (${tipo}, ${mimeType}, fuente=${esUrl ? 'url' : 'base64'}): ${describirError(error)}`,
+      );
+      throw new BadRequestException(
+        'No fue posible guardar el archivo multimedia.',
+      );
+    }
+  }
+
+  private async descargarMediaWhatsapp(
+    url: string,
+    mimeType: string,
+    tipo: 'IMAGEN' | 'AUDIO' | 'VIDEO' | 'DOCUMENTO',
+  ): Promise<string> {
+    const respuesta = await fetch(url, {
+      headers: {
+        Accept: `${mimeType}, */*`,
+        Origin: 'https://web.whatsapp.com',
+        Referer: 'https://web.whatsapp.com/',
+        'User-Agent': 'HeavyCult-WhatsApp-Media/1.0',
+      },
+      redirect: 'follow',
+    });
+
+    if (!respuesta.ok) {
+      throw new BadRequestException(
+        `WhatsApp no permitió descargar el archivo multimedia (HTTP ${respuesta.status}).`,
+      );
+    }
+
+    const longitud = respuesta.headers.get('content-length');
+    if (longitud && Number(longitud) > 10 * 1024 * 1024) {
+      throw new BadRequestException(
+        'El archivo multimedia no puede superar 10 MB.',
+      );
+    }
+
+    const buffer = Buffer.from(await respuesta.arrayBuffer());
+    if (buffer.length === 0) {
+      throw new BadRequestException(
+        'WhatsApp devolvió un archivo multimedia vacío.',
+      );
+    }
+    if (buffer.length > 10 * 1024 * 1024) {
+      throw new BadRequestException(
+        'El archivo multimedia no puede superar 10 MB.',
+      );
+    }
+
+    if (!esBinarioMediaValido(buffer, tipo)) {
+      throw new BadRequestException(
+        'WhatsApp no devolvió el contenido binario del archivo multimedia.',
+      );
+    }
+
+    return `data:${mimeType};base64,${buffer.toString('base64')}`;
   }
 
   /** Borra la copia de Cloudinary; Shopify ya tiene la suya. */

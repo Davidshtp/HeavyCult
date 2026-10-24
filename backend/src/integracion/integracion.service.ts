@@ -27,6 +27,7 @@ export interface ResultadoPrueba {
 }
 
 const SHOPIFY_API_TIMEOUT_MS = 10000;
+const WHATSAPP_API_TIMEOUT_MS = 10000;
 
 /**
  * Claves de `config` que nunca deben viajar al navegador. Se filtran por
@@ -43,6 +44,11 @@ const CLAVES_SECRETAS = new Set([
   'password',
   'secret',
 ]);
+
+export interface CredencialesIntegracion {
+  apiKey: string;
+  config: Record<string, string> | null;
+}
 
 export interface IntegracionSerializada {
   id_integracion: number;
@@ -112,6 +118,30 @@ export class IntegracionService {
     return integraciones.map((integracion) => this.serializar(integracion));
   }
 
+  /**
+   * Devuelve la primera conexión activa de una plataforma. Se usa para
+   * resolver la configuración de WhatsApp sin acoplar el módulo al id.
+   */
+  async buscarActivaPorPlataforma(
+    plataforma: PlataformaIntegracion,
+  ): Promise<Integracion | null> {
+    return this.integracionRepository.findOne({
+      where: { plataforma, activo: true },
+      order: { id_integracion: 'ASC' },
+    });
+  }
+
+  /** Credenciales descifradas para que otro dominio hable con el proveedor. */
+  async obtenerCredenciales(
+    idIntegracion: number,
+  ): Promise<CredencialesIntegracion> {
+    const integracion = await this.findById(idIntegracion);
+    return {
+      apiKey: descifrarApiKey(this.secreto, integracion.api_key_cifrada),
+      config: integracion.config,
+    };
+  }
+
   async crear(dto: CrearIntegracionDto): Promise<IntegracionSerializada> {
     const integracion = this.integracionRepository.create({
       plataforma: dto.plataforma,
@@ -177,6 +207,8 @@ export class IntegracionService {
       resultado = await this.consultarShopify(apiKey, shop);
     } else if (integracion.plataforma === PlataformaIntegracion.META_ADS) {
       resultado = await this.consultarMetaAds(integracion, apiKey);
+    } else if (integracion.plataforma === PlataformaIntegracion.WHATSAPP) {
+      resultado = await this.consultarWhatsapp(integracion, apiKey);
     } else {
       resultado = {
         ok: false,
@@ -235,6 +267,71 @@ export class IntegracionService {
       return descifrarApiKey(this.secreto, valor);
     } catch {
       return null;
+    }
+  }
+
+  private async consultarWhatsapp(
+    integracion: Integracion,
+    apiKey: string,
+  ): Promise<ResultadoPrueba> {
+    const baseUrl = integracion.config?.['base_url']?.trim();
+    if (!baseUrl) {
+      return {
+        ok: false,
+        mensaje:
+          'Esta conexión de WhatsApp no tiene registrada la URL de Evolution API. Configúrala en Configuración → WhatsApp.',
+      };
+    }
+
+    const url = `${baseUrl.replace(/\/+$/, '')}/instance/fetchInstances`;
+    const controlador = new AbortController();
+    const temporizador = setTimeout(
+      () => controlador.abort(),
+      WHATSAPP_API_TIMEOUT_MS,
+    );
+
+    try {
+      const respuesta = await fetch(url, {
+        headers: {
+          apikey: apiKey,
+          Accept: 'application/json',
+        },
+        signal: controlador.signal,
+      });
+
+      if (respuesta.ok) {
+        return {
+          ok: true,
+          mensaje: 'Conexión verificada con Evolution API correctamente.',
+        };
+      }
+
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        return {
+          ok: false,
+          mensaje:
+            'Evolution API rechazó la API key. Verifica la clave configurada en el servidor de Evolution.',
+        };
+      }
+      if (respuesta.status === 404) {
+        return {
+          ok: false,
+          mensaje: `No se encontró Evolution API en ${baseUrl}. Revisa la URL del servidor.`,
+        };
+      }
+
+      return {
+        ok: false,
+        mensaje: `Evolution API respondió con un error (HTTP ${respuesta.status}).`,
+      };
+    } catch {
+      return {
+        ok: false,
+        mensaje:
+          'No se pudo contactar Evolution API (sin respuesta o tiempo de espera agotado). Verifica que el servidor esté encendido y la URL sea correcta.',
+      };
+    } finally {
+      clearTimeout(temporizador);
     }
   }
 
